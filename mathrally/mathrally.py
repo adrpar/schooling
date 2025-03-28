@@ -1,6 +1,7 @@
 from copy import deepcopy
 from enum import Enum
 from random import seed, randrange, choice
+from svg.svg_handler import SVGFile  # Import the SVGFile class from the new module
 
 import lxml.etree as ET
 
@@ -25,34 +26,6 @@ OPERATORS = [
 MIN_VALUE = 1
 MAX_VALUE = 100
 SEED = 7875
-
-
-class SVGFile:
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
-
-    def __init__(self, file_name):
-        self.file_name = file_name
-        self.svg_xml = ET.parse(file_name)
-        self.svg = self.svg_xml.getroot()
-
-    def find_all(self, tag):
-        return self.svg.findall(".//{}".format(tag), namespaces=self.NAMESPACE_MAP)
-
-    def find_all_elements_by_attributes(self, tag, attribute):
-        elements = self.find_all(tag)
-        return {element.attrib[attribute]: element for element in elements}
-
-    def all_spans_in_text(self, text_node):
-        return text_node.findall(".//tspan", namespaces=self.NAMESPACE_MAP)
-
-    def write(self, file_name):
-        self.svg_xml.write(file_name)
 
 
 class RallyTemplate:
@@ -248,21 +221,3 @@ class RallyAlgorithm:
                 return False
 
         return True
-
-
-def main():
-    template = RallyTemplate("{}/{}".format(TEMPLATE_PATH, TEMPLATE_NAME))
-    algorithm = RallyAlgorithm(
-        OPERATORS, MIN_VALUE, MAX_VALUE, template.num_operators, SEED
-    )
-    algorithm.build_rally()
-    template.create_new_rally(algorithm, "test.svg", "test_res.svg")
-    print(algorithm.result)
-
-    # print(template.value_elements)
-    # print(template.operator_elements)
-    # print(template.title_element)
-
-
-if __name__ == "__main__":
-    main()
