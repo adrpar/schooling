@@ -10,6 +10,7 @@ BOX_TEMPLATE = """
 </svg>
 """
 
+
 class NumericalPaperCell:
     NAMESPACE_MAP = {
         "html": "http://www.w3.org/1999/xhtml",

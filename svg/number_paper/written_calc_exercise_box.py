@@ -1,7 +1,9 @@
 import lxml.etree as ET
 from svg.number_paper.paper_cell import NumericalPaperCell
+from svg.svg_groups import calculate_group_dimensions
 
 BOX_STROKE_WIDTH = 0.223193
+
 
 class WrittenCalcExerciseBox:
     NAMESPACE_MAP = {
@@ -95,9 +97,9 @@ class WrittenCalcExerciseBox:
 
                 total_matrix_width = max(total_matrix_width, new_origin_x)
 
-                new_box.group.attrib[
-                    "transform"
-                ] = f"translate({new_origin_x},{new_origin_y})"
+                new_box.group.attrib["transform"] = (
+                    f"translate({new_origin_x},{new_origin_y})"
+                )
                 node.append(new_box.group)
 
     def _draw_line(

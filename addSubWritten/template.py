@@ -34,10 +34,10 @@ class AddSubTemplate:
 
     def create_new(self, algorithm, filename_addsub):
         operator_string = self._get_operator_string(algorithm.operations)
-        self.title_tspan_elements[
-            self.CONFIG_SPAN
-        ].text = "Operators: {} - Max Num: {} - Seed: {}".format(
-            operator_string, algorithm.max_value, algorithm.seed
+        self.title_tspan_elements[self.CONFIG_SPAN].text = (
+            "Operators: {} - Max Num: {} - Seed: {}".format(
+                operator_string, algorithm.max_value, algorithm.seed
+            )
         )
 
         exercises = []
@@ -72,4 +72,3 @@ class AddSubTemplate:
             elif operator == Operator.DIVISION:
                 result = result + "/"
         return result
-    

@@ -1,5 +1,6 @@
 import lxml.etree as ET
 
+
 class SVGFile:
     NAMESPACE_MAP = {
         "html": "http://www.w3.org/1999/xhtml",
@@ -33,6 +34,7 @@ class SVGFile:
 
     def write(self, file_name):
         self.svg_xml.write(file_name)
+
 
 class SvgNode:
     NAMESPACE_MAP = {

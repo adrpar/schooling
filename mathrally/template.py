@@ -73,15 +73,15 @@ class RallyTemplate:
         rally_copy = RallyTemplate(self.file_name)
 
         operator_string = self._get_operator_string(algorithm_results.operations)
-        solution_copy.title_tspan_elements[
-            self.CONFIG_SPAN
-        ].text = "Operators: {} - Max Num: {} - Seed: {}".format(
-            operator_string, algorithm_results.max_value, algorithm_results.seed
+        solution_copy.title_tspan_elements[self.CONFIG_SPAN].text = (
+            "Operators: {} - Max Num: {} - Seed: {}".format(
+                operator_string, algorithm_results.max_value, algorithm_results.seed
+            )
         )
-        rally_copy.title_tspan_elements[
-            self.CONFIG_SPAN
-        ].text = "Operators: {} - Max Num: {} - Seed: {}".format(
-            operator_string, algorithm_results.max_value, algorithm_results.seed
+        rally_copy.title_tspan_elements[self.CONFIG_SPAN].text = (
+            "Operators: {} - Max Num: {} - Seed: {}".format(
+                operator_string, algorithm_results.max_value, algorithm_results.seed
+            )
         )
 
         for i, element in enumerate(algorithm_results.result):

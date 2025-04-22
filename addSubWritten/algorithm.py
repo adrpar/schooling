@@ -4,6 +4,7 @@ from random import choice, randrange, seed
 
 __all__ = ["AddSubAlgorithm", "Operator"]
 
+
 class Operator(Enum):
     ADDITION = 1
     SUBTRACTION = 2

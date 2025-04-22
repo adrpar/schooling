@@ -2,16 +2,17 @@ import unittest
 import lxml.etree as ET
 from svg.svg_handler import SVGFile, SvgNode
 
+
 class TestSVGFile(unittest.TestCase):
     def setUp(self):
         # Create a simple SVG content for testing
-        self.svg_content = '''<svg xmlns="http://www.w3.org/2000/svg">
+        self.svg_content = """<svg xmlns="http://www.w3.org/2000/svg">
             <text id="test_text">Hello</text>
             <rect id="test_rect" width="100" height="100"/>
             <g id="test_group">
                 <tspan id="test_tspan">World</tspan>
             </g>
-        </svg>'''
+        </svg>"""
         self.file_name = "test.svg"
         with open(self.file_name, "w") as f:
             f.write(self.svg_content)
@@ -19,6 +20,7 @@ class TestSVGFile(unittest.TestCase):
 
     def tearDown(self):
         import os
+
         os.remove(self.file_name)
 
     def test_find_all(self):
@@ -39,7 +41,9 @@ class TestSVGFile(unittest.TestCase):
 
     def test_find_all_elements_by_attributes_in_node(self):
         group_node = self.svg_file.find_all("g")[0]
-        elements = self.svg_file.find_all_elements_by_attributes_in_node(group_node, "tspan", "id")
+        elements = self.svg_file.find_all_elements_by_attributes_in_node(
+            group_node, "tspan", "id"
+        )
         self.assertIn("test_tspan", elements)
         self.assertEqual(elements["test_tspan"].text, "World")
 
@@ -56,16 +60,18 @@ class TestSVGFile(unittest.TestCase):
             content = f.read()
         self.assertIn('<svg xmlns="http://www.w3.org/2000/svg">', content)
         import os
+
         os.remove(new_file_name)
+
 
 class TestSvgNode(unittest.TestCase):
     def setUp(self):
         # Create a simple SVG content for testing
-        self.svg_content = '''<svg xmlns="http://www.w3.org/2000/svg">
+        self.svg_content = """<svg xmlns="http://www.w3.org/2000/svg">
             <g id="test_group">
                 <tspan id="test_tspan">World</tspan>
             </g>
-        </svg>'''
+        </svg>"""
         self.node = ET.fromstring(self.svg_content)
         self.svg_node = SvgNode(self.node)
 
@@ -79,5 +85,6 @@ class TestSvgNode(unittest.TestCase):
         self.assertIn("test_tspan", elements)
         self.assertEqual(elements["test_tspan"].text, "World")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

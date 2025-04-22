@@ -1,10 +1,15 @@
 import unittest
 import lxml.etree as ET
-from svg.svg_groups import calculate_group_dimensions, parse_transform, distribute_groups_in_drawing_area
+from svg.svg_groups import (
+    calculate_group_dimensions,
+    parse_transform,
+    distribute_groups_in_drawing_area,
+)
+
 
 class TestSvgGroups(unittest.TestCase):
     def setUp(self):
-        self.svg_content = '''
+        self.svg_content = """
         <svg xmlns="http://www.w3.org/2000/svg">
             <g id="group1" transform="translate(10, 20)">
                 <rect x="0" y="0" width="50" height="30"/>
@@ -14,7 +19,7 @@ class TestSvgGroups(unittest.TestCase):
                 </g>
             </g>
         </svg>
-        '''
+        """
         self.svg_tree = ET.fromstring(self.svg_content)
         self.group = self.svg_tree.find(".//{*}g[@id='group1']")
 
@@ -60,14 +65,33 @@ class TestSvgGroups(unittest.TestCase):
         distribute_groups_in_drawing_area(group_list, drawing_area, drawing_area_group)
 
         # Verify the groups are distributed correctly
-        self.assertEqual(len(drawing_area_group), 5, "Not all groups were added to the drawing area group.")
+        self.assertEqual(
+            len(drawing_area_group),
+            5,
+            "Not all groups were added to the drawing area group.",
+        )
 
         transforms = [elem.attrib["transform"] for elem in drawing_area_group]
-        self.assertEqual(transforms[0], "translate(0.0,0.0)", "Group1 transform is incorrect.")
-        self.assertEqual(transforms[1], "translate(60.0,0.0)", "Group2 transform is incorrect.")
-        self.assertEqual(transforms[2], "translate(130.0,0.0)", "Group3 transform is incorrect.")
-        self.assertEqual(transforms[3], "translate(0.0,50.0)", "Group4 transform is incorrect (should be on the next line).")
-        self.assertEqual(transforms[4], "translate(110.0,50.0)", "Group5 transform is incorrect (should be on the next line).")
+        self.assertEqual(
+            transforms[0], "translate(0.0,0.0)", "Group1 transform is incorrect."
+        )
+        self.assertEqual(
+            transforms[1], "translate(60.0,0.0)", "Group2 transform is incorrect."
+        )
+        self.assertEqual(
+            transforms[2], "translate(130.0,0.0)", "Group3 transform is incorrect."
+        )
+        self.assertEqual(
+            transforms[3],
+            "translate(0.0,50.0)",
+            "Group4 transform is incorrect (should be on the next line).",
+        )
+        self.assertEqual(
+            transforms[4],
+            "translate(110.0,50.0)",
+            "Group5 transform is incorrect (should be on the next line).",
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

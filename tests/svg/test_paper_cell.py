@@ -2,6 +2,7 @@ import unittest
 import lxml.etree as ET
 from svg.number_paper.paper_cell import NumericalPaperCell
 
+
 class TestNumericalPaperCell(unittest.TestCase):
     def setUp(self):
         self.value = 4
@@ -27,5 +28,6 @@ class TestNumericalPaperCell(unittest.TestCase):
         self.assertIsNone(self.cell.text)
         self.assertIsNone(self.cell.tspan)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
