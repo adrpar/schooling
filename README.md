@@ -1,13 +1,31 @@
-# Install
+# Math Trainer
 
-Requires uv:
+This is a CLI tool for generating math rally and add/sub exercises in SVG format.
 
-```
+## Installation
+
+If you want to install this as a CLI tool that is commonly available, run:
+
+```sh
+pip install -e .
 pip install uv
 ```
 
-`uv` will automaticall install required packages.
+`uv` will automatically install required packages.
 
+## Usage
+
+### Math Rally
+
+```sh
+uv run math-trainer.py -- mathrally --output rally.svg --solution rally_solution.svg
+```
+
+### Add/Sub Exercises
+
+```sh
+uv run math-trainer.py -- addsub --output addsub.svg
+```
 
 # Run
 
@@ -44,7 +62,6 @@ Open this file in Inkscape (works in Inkscape only) and print/convert to PDF.
 
 ## Written addition / subtraction
 
-
 Edit the following config section at the start of `addsub.py`:
 
 ```
@@ -69,9 +86,25 @@ Comment out operators you don't want to have and the value range you want to cov
 Then run:
 
 ```
-uv run mathrally/mathrally.py
+uv run addSubWritten/addsub.py
 ```
 
 This will generate a svg output in `./test.svg`.
 
 Open this file in Inkscape (works in Inkscape only) and print/convert to PDF.
+
+# Developer Guide
+
+## Running Tests
+
+To run the tests with pytest, use the following command:
+
+```sh
+pytest
+```
+
+Make sure you have pytest installed. You can install it using pip:
+
+```sh
+pip install pytest
+```
