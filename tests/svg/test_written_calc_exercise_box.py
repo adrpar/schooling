@@ -21,7 +21,7 @@ class TestWrittenCalcExerciseBox(unittest.TestCase):
         rects = box.findall(".//{*}rect")
 
         x_dimensions, y_dimensions = self._count_distinct_translate_values(box)
-        self.assertEqual(len(x_dimensions), 7, "Incorrect number of x boxes found.")
+        self.assertEqual(len(x_dimensions), 6, "Incorrect number of x boxes found.")
         self.assertEqual(len(y_dimensions), 4, "Incorrect number of y boxes found.")
 
         texts = box.findall(".//{*}text")

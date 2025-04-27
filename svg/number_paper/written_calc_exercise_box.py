@@ -16,6 +16,9 @@ class WrittenCalcExerciseBox:
 
     OPERATORS = ["+", "-", "×", "÷"]
 
+    NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR = 1
+    NUM_SPACES_BEFORE_OPERATOR = 1
+
     def __init__(self, operation, values: list[int]):
         self.operation = operation
         self.values = values
@@ -27,8 +30,10 @@ class WrittenCalcExerciseBox:
 
         max_value = max(self.values)
         num_boxes = (
-            len(str(max_value)) + 2 + 2
-        )  # 2 for space, 2 for the operator with space
+            len(str(max_value))
+            + self.NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR + 1 
+            + self.NUM_SPACES_BEFORE_OPERATOR
+        )  # 1 for operator
 
         num_rows = len(self.values) + 1 + 1  # 1 for space and 1 for answer
 
@@ -56,15 +61,20 @@ class WrittenCalcExerciseBox:
                     current_value
                 )
             else:
+                num_spaces_and_operator = (
+                    self.NUM_SPACES_BEFORE_OPERATOR
+                    + 1
+                    + self.NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR
+                )
                 value_string = (
-                    " "
+                    " " * self.NUM_SPACES_BEFORE_OPERATOR
                     + (
                         self.OPERATORS[self.operation.value - 1]
                         if j < num_y - 2
                         else " "
                     )
-                    + 2 * " "
-                    + (num_x - len(str(current_value)) - 4) * " "
+                    + " " * self.NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR
+                    + (num_x - len(str(current_value)) - num_spaces_and_operator) * " "
                     + str(current_value)
                 )
 
