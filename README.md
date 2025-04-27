@@ -1,97 +1,120 @@
 # Math Trainer
 
-This is a CLI tool for generating math rally and add/sub exercises in SVG format.
+## CLI Tools
 
-## Installation
+This project provides two CLI tools: `addsub` and `mathrally`. Both tools allow generating exercises or rallies in SVG and/or PDF formats.
 
-If you want to install this as a CLI tool that is commonly available, run:
+### Common Options
 
-```sh
-pip install -e .
-pip install uv
+Both `addsub` and `mathrally` support the following common options:
+
+- `--output`: Specifies the output file name for the SVG file.
+- `--format`: Specifies the output format. Options are:
+  - `svg`: Generates only the SVG file.
+  - `pdf`: Generates only the PDF file. In this case, a temporary SVG file is created and removed after the PDF is generated.
+  - `both` (default): Generates both SVG and PDF files.
+
+---
+
+### `addsub` Command
+
+The `addsub` command generates addition and subtraction exercises.
+
+#### Usage
+
+```bash
+python cli/addsub.py --output <output_file> --format <format>
 ```
 
-`uv` will automatically install required packages.
+#### Example
 
-## Usage
+1. Generate only an SVG file:
+   ```bash
+   python cli/addsub.py --output exercises.svg --format svg
+   ```
 
-### Math Rally
+2. Generate only a PDF file:
+   ```bash
+   python cli/addsub.py --output exercises.svg --format pdf
+   ```
 
-```sh
-uv run math-trainer.py -- mathrally --output rally.svg --solution rally_solution.svg
+3. Generate both SVG and PDF files:
+   ```bash
+   python cli/addsub.py --output exercises.svg --format both
+   ```
+
+---
+
+### `mathrally` Command
+
+The `mathrally` command generates a math rally.
+
+#### Usage
+
+```bash
+python cli/mathrally.py --output <output_file> --solution <solution_file> --format <format>
 ```
 
-### Add/Sub Exercises
+#### Example
 
-```sh
-uv run math-trainer.py -- addsub --output addsub.svg
-```
+1. Generate only SVG files:
+   ```bash
+   python cli/mathrally.py --output rally.svg --solution solution.svg --format svg
+   ```
 
-# Run
+2. Generate only PDF files:
+   ```bash
+   python cli/mathrally.py --output rally.svg --solution solution.svg --format pdf
+   ```
 
-## Math Rally
+3. Generate both SVG and PDF files:
+   ```bash
+   python cli/mathrally.py --output rally.svg --solution solution.svg --format both
+   ```
 
-Edit the following config section at the start of `mathrally.py`:
+---
 
-```
-TEMPLATE_PATH = "./img"
-TEMPLATE_NAME = "Rally1.svg"
+## Prerequisites
 
-OPERATORS = [
-    Operator.ADDITION,
-    Operator.SUBTRACTION,
-    Operator.MULTIPLICATION,
-    Operator.DIVISION,
-]
-MIN_VALUE = 1
-MAX_VALUE = 100
-SEED = 7875
-```
+This project requires **Inkscape** for rendering SVG files to PDF. Ensure that Inkscape is installed and accessible via the command line.
 
-Comment out operators you don't want to have and the value range you want to cover in the exercise.
+### Installing Inkscape CLI
 
-Then run:
+1. **Download and Install Inkscape**:
+   - Visit the [Inkscape download page](https://inkscape.org/release/) and download the appropriate version for your operating system.
+   - Follow the installation instructions for your platform.
 
-```
-uv run mathrally/mathrally.py
-```
+2. **Verify Installation**:
+   - Open a terminal or command prompt and run:
+     ```bash
+     inkscape --version
+     ```
+   - This should output the installed version of Inkscape. If the command is not recognized, ensure that Inkscape is added to your system's PATH.
 
-This will generate a svg output in `./test.svg`.
+3. **Add Inkscape to PATH (if necessary)**:
+   - **Windows**:
+     - Open the Start menu and search for "Environment Variables."
+     - Edit the `Path` variable in the system variables section and add the directory where `inkscape.exe` is located (e.g., `C:\Program Files\Inkscape`).
+   - **macOS/Linux**:
+     - Add the Inkscape binary directory to your PATH. For example, add the following line to your `~/.bashrc` or `~/.zshrc` file:
+       ```bash
+       export PATH="/Applications/Inkscape.app/Contents/MacOS:$PATH"
+       ```
+     - Reload your shell configuration:
+       ```bash
+       source ~/.bashrc  # or source ~/.zshrc
+       ```
 
-Open this file in Inkscape (works in Inkscape only) and print/convert to PDF.
+4. **Test Again**:
+   - Run `inkscape --version` to confirm that Inkscape is properly installed and accessible.
 
-## Written addition / subtraction
+---
 
-Edit the following config section at the start of `addsub.py`:
+### Troubleshooting
 
-```
-TEMPLATE_PATH = "./img"
-TEMPLATE_NAME = "addsub1.svg"
+- If you encounter issues, refer to the [Inkscape documentation](https://inkscape.org/doc/) or check the [FAQs](https://inkscape.org/learn/faq/).
 
-OPERATORS = [
-    Operator.ADDITION,
-    Operator.SUBTRACTION,
-    # Operator.MULTIPLICATION,
-    # Operator.DIVISION,
-]
-MIN_VALUE = 1
-MAX_VALUE = 999
-SEED = 7874
-NUM_EXERCISES = 30
-NUM_ROWS_PER_EXERCISE = 2
-```
-
-Comment out operators you don't want to have and the value range you want to cover in the exercise.
-
-Then run:
-
-```
-uv run addSubWritten/addsub.py
-```
-
-This will generate a svg output in `./test.svg`.
-
-Open this file in Inkscape (works in Inkscape only) and print/convert to PDF.
+---
 
 # Developer Guide
 

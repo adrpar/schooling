@@ -1,4 +1,5 @@
 import lxml.etree as ET
+import inkex
 
 
 class SVGFile:
@@ -54,3 +55,20 @@ class SvgNode:
     def find_all_elements_by_attributes_in_node(self, tag, attribute):
         elements = self.find_all_in_node(tag)
         return {element.attrib[attribute]: element for element in elements}
+
+
+def render_svg_to_pdf(svg_path, pdf_path):
+    """
+    Converts an SVG file to a PDF using Inkex.
+
+    :param svg_path: Path to the input SVG file.
+    :param pdf_path: Path to the output PDF file.
+    """
+    if not inkex.command.is_inkscape_available():
+        raise RuntimeError("Inkscape is not available. Please install it.")
+
+    try:
+        # Correctly pass arguments as separate strings
+        inkex.command.inkscape(svg_path, "--export-filename", pdf_path)
+    except Exception as e:
+        raise RuntimeError(f"Failed to convert {svg_path} to PDF: {e}")
