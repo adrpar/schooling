@@ -1,3 +1,5 @@
 Click
 lxml
+inkex
+flake8
 pytest

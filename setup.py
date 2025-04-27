@@ -8,6 +8,7 @@ setup(
     install_requires=[
         'Click',
         'lxml',
+        'inkex',
     ],
     entry_points={
         'console_scripts': [
