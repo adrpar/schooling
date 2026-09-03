@@ -1,15 +1,20 @@
+import os
+
 import lxml.etree as ET
 import inkex
 
+# Single shared namespace map, imported by all SVG modules (Q6)
+NAMESPACE_MAP = {
+    "html": "http://www.w3.org/1999/xhtml",
+    "xlink": "http://www.w3.org/1999/xlink",
+    "xml": "http://www.w3.org/XML/1998/namespace",
+    "xmlns": "http://www.w3.org/2000/xmlns/",
+    None: "http://www.w3.org/2000/svg",
+}
+
 
 class SVGFile:
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
+    NAMESPACE_MAP = NAMESPACE_MAP
 
     def __init__(self, file_name):
         self.file_name = file_name
@@ -17,14 +22,18 @@ class SVGFile:
         self.svg = self.svg_xml.getroot()
 
     def find_all(self, tag):
-        return self.svg.findall(".//{}".format(tag), namespaces=self.NAMESPACE_MAP)
+        return self.svg.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
 
     def find_all_elements_by_attributes(self, tag, attribute):
         elements = self.find_all(tag)
-        return {element.attrib[attribute]: element for element in elements}
+        return {
+            element.attrib[attribute]: element
+            for element in elements
+            if attribute in element.attrib
+        }
 
     def find_all_in_node(self, node, tag):
-        return node.findall(".//{}".format(tag), namespaces=self.NAMESPACE_MAP)
+        return node.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
 
     def find_all_elements_by_attributes_in_node(self, node, tag, attribute):
         elements = self.find_all_in_node(node, tag)
@@ -38,26 +47,17 @@ class SVGFile:
 
 
 class SvgNode:
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
+    NAMESPACE_MAP = NAMESPACE_MAP
 
     def __init__(self, node):
         self.node = node
 
     def find_all_in_node(self, tag):
-        return self.node.findall(".//{}".format(tag), namespaces=self.NAMESPACE_MAP)
+        return self.node.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
 
     def find_all_elements_by_attributes_in_node(self, tag, attribute):
         elements = self.find_all_in_node(tag)
         return {element.attrib[attribute]: element for element in elements}
-
-
-import os
 
 
 def _ensure_inkscape():

@@ -1,18 +1,12 @@
 import lxml.etree as ET
 from svg.number_paper.paper_cell import NumericalPaperCell
-from svg.svg_groups import calculate_group_dimensions
+from svg.svg_handler import NAMESPACE_MAP
 
 BOX_STROKE_WIDTH = 0.223193
 
 
 class WrittenCalcExerciseBox:
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
+    NAMESPACE_MAP = NAMESPACE_MAP
 
     OPERATORS = ["+", "-", "×", "÷"]
 
