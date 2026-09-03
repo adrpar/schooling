@@ -16,19 +16,19 @@
          width="180"
          height="240"
          x="15"
-         y="32" />
+         y="30" />
     </g>
     <text
        xml:space="preserve"
-       style="font-weight:bold;font-size:7mm;font-family:Arial, sans-serif;text-anchor:middle;fill:#1a1a1a;"
+       style="font-weight:bold;font-size:8px;font-family:Arial, sans-serif;text-anchor:middle;fill:#1a202c;"
        x="105"
-       y="22"
+       y="20"
        id="Title"><tspan id="TitleSpan">Zahlenmauer</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:3.5mm;font-family:Arial, sans-serif;text-anchor:start;fill:#666666;"
+       style="font-size:4px;font-family:Arial, sans-serif;text-anchor:start;fill:#718096;"
        x="15"
-       y="285"
+       y="282"
        id="Footer"><tspan id="FooterSpan">Name: ______________________    Datum: ____________</tspan></text>
   </g>
 </svg>

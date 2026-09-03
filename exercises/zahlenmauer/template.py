@@ -1,4 +1,3 @@
-import copy
 from pathlib import Path
 from typing import Optional
 
@@ -10,19 +9,26 @@ from svg.svg_handler import NAMESPACE_MAP, SVGFile
 
 __all__ = ["ZahlenmauerTemplate"]
 
-# Default brick geometry (in mm)
-DEFAULT_BRICK_WIDTH = 16.0
-DEFAULT_BRICK_HEIGHT = 9.5
-CORNER_RADIUS = "1.0"
+# Geometry lookup per base size (W, H) in mm/user units
+BRICK_GEOMETRY = {
+    3: (24.0, 15.0),
+    4: (20.0, 13.0),
+    5: (16.0, 11.0),
+    6: (13.5, 9.5),
+}
 
 # Styling constants
 BORDER_COLOR = "#2d3748"
 BORDER_WIDTH = "0.35"
+CORNER_RADIUS = "1.2"
+
 GIVEN_TEXT_COLOR = "#1a202c"
 SOLUTION_TEXT_COLOR = "#2b6cb0"
-CLUE_FILL = "#f7fafc"
-BLANK_FILL = "#ffffff"
-SOLUTION_FILL = "#ebf8ff"
+LABEL_COLOR = "#718096"
+
+CLUE_FILL = "#edf2f7"       # Subtle soft gray for given numbers
+BLANK_FILL = "#ffffff"      # Pure white for student writing space
+SOLUTION_FILL = "#ebf8ff"   # Soft blue for solved answers
 
 
 class ZahlenmauerTemplate:
@@ -89,8 +95,10 @@ class ZahlenmauerTemplate:
         Builds a single Zahlenmauer pyramid group.
         """
         B = puzzle.base_size
-        W = DEFAULT_BRICK_WIDTH
-        H = DEFAULT_BRICK_HEIGHT
+        W, H = BRICK_GEOMETRY.get(B, (20.0, 13.0))
+
+        font_size = round(H * 0.48, 1)  # ~6.2px for H=13
+        label_size = 3.2
 
         pyramid_group = ET.Element(
             "g",
@@ -98,14 +106,14 @@ class ZahlenmauerTemplate:
             transform="translate(0,0)",
         )
 
-        # Optional small label above the pyramid
+        # Label above the pyramid
         label = ET.SubElement(
             pyramid_group,
             "text",
             attrib={
                 "x": "0",
-                "y": "-2",
-                "style": "font-size:3.2mm;font-family:Arial,sans-serif;fill:#718096;font-weight:bold;",
+                "y": "-2.5",
+                "style": f"font-size:{label_size}px;font-family:Arial,Helvetica,sans-serif;fill:{LABEL_COLOR};font-weight:bold;",
             },
         )
         label.text = f"#{index}"
@@ -149,17 +157,25 @@ class ZahlenmauerTemplate:
                     },
                 )
 
-                # <text> value
+                # <text> value centered vertically and horizontally
                 if display_text:
+                    # Slightly adjust font size if 3 digits to ensure generous margins
+                    char_len = len(display_text)
+                    curr_font_size = font_size if char_len <= 2 else font_size * 0.88
+
                     text_elem = ET.SubElement(
                         pyramid_group,
                         "text",
                         attrib={
                             "x": f"{brick_x + W / 2.0:.2f}",
-                            "y": f"{brick_y + H / 2.0 + 1.2:.2f}",
+                            "y": f"{brick_y + H / 2.0:.2f}",
                             "style": (
-                                f"font-size:4.2mm;font-family:Arial,Helvetica,sans-serif;"
-                                f"text-anchor:middle;font-weight:bold;fill:{text_color};"
+                                f"font-size:{curr_font_size:.1f}px;"
+                                f"font-family:Arial,Helvetica,sans-serif;"
+                                f"text-anchor:middle;"
+                                f"dominant-baseline:central;"
+                                f"font-weight:bold;"
+                                f"fill:{text_color};"
                             ),
                         },
                     )
