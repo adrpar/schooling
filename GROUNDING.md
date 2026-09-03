@@ -29,21 +29,23 @@ Projekt Rechenrally/
 ├── core/                 # Shared domain types (Operator enum)
 ├── exercises/            # All exercise-type implementations
 │   ├── mathrally/        # Exercise type: Math Rally (chain calculations)
-│   └── addsub/           # Exercise type: Written addition/subtraction (column form)
+│   ├── addsub/           # Exercise type: Written addition/subtraction (column form)
+│   └── zahlenmauer/      # Exercise type: Zahlenmauer / Addition Pyramid
 ├── svg/                  # Shared SVG utilities (file I/O, layout engine, grid cells)
 │   └── number_paper/     # Number-paper grid cells + written calculation box
-├── cli/                  # Click CLI entry points (mathrally.py, addsub.py)
+├── cli/                  # Click CLI entry points (mathrally.py, addsub.py, zahlenmauer.py)
 └── tests/                # pytest suite
 ```
 
 ### Packages & dependency flow
 
 ```
-cli/mathrally.py  ─→  exercises/mathrally/  ─→  svg/
-                                             └── core/
-cli/addsub.py     ─→  exercises/addsub/     ─→  svg/
-                                             │   └── number_paper/
-                                             └── core/
+cli/mathrally.py    ─→  exercises/mathrally/    ─→  svg/
+                                                └── core/
+cli/addsub.py       ─→  exercises/addsub/       ─→  svg/
+                                                │   └── number_paper/
+                                                └── core/
+cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 ```
 
 ---
@@ -72,9 +74,17 @@ cli/addsub.py     ─→  exercises/addsub/     ─→  svg/
 | Template | `exercises/addsub/template.py` | Loads `exercises/addsub/drawing.svg` (A4 blank), generates `WrittenCalcExerciseBox` SVG groups, distributes them on the page. Uses `pathlib` for robust path resolution. |
 | SVG blank | `exercises/addsub/drawing.svg` | A4 page with a `drawingArea` rect where exercises are placed. |
 | Cell renderer | `svg/number_paper/paper_cell.py` | `NumericalPaperCell` — one grid square: a `<rect>` + `<text>/<tspan>`. Renders digits or operators. Template is an inline SVG string. |
-| Box builder | `svg/number_paper/written_calc_exercise_box.py` | `WrittenCalcExerciseBox` — assembles a full column-calculation box from cells. Draws separator lines. |
+### 3.3 Zahlenmauer (`exercises/zahlenmauer/`)
+**What it is:** Addition Pyramids / Number Walls (Zahlenmauer / Rechenmauer) — classic elementary school math puzzles where each brick is the sum of the two bricks directly underneath it. Features configurable base size, difficulty levels (`easy`, `medium`, `hard`), and guaranteed solvability verification via student-deduction simulation. Generates both student sheets (with blanks) and solution sheets (answers highlighted).
 
-**Architecture pattern:** "Programmatic SVG construction" — no Inkscape template; the entire exercise box is built cell by cell using `lxml.etree`.
+| Component | File | Role |
+|-----------|------|------|
+| Difficulty | `exercises/zahlenmauer/difficulty.py` | `Difficulty` enum (`EASY`, `MEDIUM`, `HARD`). |
+| Algorithm & Solver | `exercises/zahlenmauer/algorithm.py` | `ZahlenmauerAlgorithm` (random full wall generation, upper bound apex checks), `ZahlenmauerSolver` (simulates step-by-step addition/subtraction and algebraic deduction), and mask generator. |
+| Template | `exercises/zahlenmauer/template.py` | `ZahlenmauerTemplate` — builds staggered horizontal brickwork groups, sets fill/text colors for clues vs blanks vs solutions, and distributes multiple pyramids across the A4 canvas. |
+| SVG blank | `exercises/zahlenmauer/drawing.svg` | A4 canvas with title, footer, and `drawingArea` rect. |
+
+**Architecture pattern:** "Programmatic SVG construction with canvas template" — renders geometric brickwork into SVG elements and lays them out via the shared layout engine.
 
 ---
 
@@ -100,10 +110,11 @@ cli/addsub.py     ─→  exercises/addsub/     ─→  svg/
 
 ## 5. CLI Layer (`cli/`)
 
-Both commands use **Click**. Common options: `--output`, `--format` (`svg`/`pdf`/`both`).
+All commands use **Click**. Common options: `--output`, `--format` (`svg`/`pdf`/`both`).
 
 - `cli/mathrally.py` → `mathrally` command (imports from `exercises.mathrally`)
 - `cli/addsub.py` → `addsub` command (imports from `exercises.addsub`)
+- `cli/zahlenmauer.py` → `zahlenmauer` command (imports from `exercises.zahlenmauer`)
 
 PDF export: Inkscape is invoked via `inkex.command.inkscape()`. A temp SVG is written when `--format pdf` is requested without SVG output.
 
@@ -202,11 +213,14 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 3. ✅ **Phase 2: SVG Layout & Cell Engine Streamlining**
    - Resolved Q6, Q7, Q9, Q18, Q25, Q26, Q27, Q28.
    - Programmatic cell prototyping, text centering without offsets, cached bbox calculations, non-rect support, overflow logging.
-4. 🔄 **Phase 3: Design & Build Next Exercise Type**
-   - Pick new exercise type (e.g. Pyramid / Rechenmauer, Multiplication Table / Einmaleins, or Number Line / Zahlenstrahl).
-   - Implement algorithm under `exercises/<type>/algorithm.py`.
-   - Implement SVG rendering under `exercises/<type>/template.py`.
-   - Add CLI command under `cli/<type>.py` and unit tests.
+4. ✅ **Phase 3: Design & Build Next Exercise Type (Zahlenmauer)**
+   - Added `exercises/zahlenmauer/` with `Difficulty` enum (`easy`, `medium`, `hard`).
+   - Implemented full pyramid generator, deduction-based solvability solver, and difficulty-guided masking.
+   - Built programmatic SVG staggered brickwork template and integrated with A4 layout engine.
+   - Added `cli/zahlenmauer.py` registered in `math-trainer.py`.
+   - Added unit and CLI test suite (50/50 tests passing).
+5. **Phase 4: CLI Configuration & Packaging Polish**
+   - Address remaining flags: Q2 (hardcoded config in module files), Q4 (legacy main entry in addsub), Q10 (full SVG transform matrix support), Q13 (public API docs), Q14 (type hints).
 
 ---
 

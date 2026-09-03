@@ -1,0 +1,168 @@
+import copy
+from pathlib import Path
+from typing import Optional
+
+import lxml.etree as ET
+
+from exercises.zahlenmauer.algorithm import ZahlenmauerAlgorithm, ZahlenmauerPuzzle
+from svg.svg_groups import distribute_groups_in_drawing_area
+from svg.svg_handler import NAMESPACE_MAP, SVGFile
+
+__all__ = ["ZahlenmauerTemplate"]
+
+# Default brick geometry (in mm)
+DEFAULT_BRICK_WIDTH = 16.0
+DEFAULT_BRICK_HEIGHT = 9.5
+CORNER_RADIUS = "1.0"
+
+# Styling constants
+BORDER_COLOR = "#2d3748"
+BORDER_WIDTH = "0.35"
+GIVEN_TEXT_COLOR = "#1a202c"
+SOLUTION_TEXT_COLOR = "#2b6cb0"
+CLUE_FILL = "#f7fafc"
+BLANK_FILL = "#ffffff"
+SOLUTION_FILL = "#ebf8ff"
+
+
+class ZahlenmauerTemplate:
+    def __init__(self, template_path: Optional[str | Path] = None):
+        if template_path is None:
+            template_path = Path(__file__).parent / "drawing.svg"
+        self.template_path = Path(template_path)
+
+    def create_sheets(
+        self,
+        algorithm: ZahlenmauerAlgorithm,
+        student_path: str,
+        solution_path: Optional[str] = None,
+    ):
+        """
+        Renders the generated Zahlenmauer puzzles into SVG files.
+
+        :param algorithm: Algorithm instance containing generated puzzles.
+        :param student_path: Destination path for the student sheet SVG.
+        :param solution_path: Optional destination path for the solution sheet SVG.
+        """
+        puzzles = algorithm.puzzles if algorithm.puzzles else algorithm.build()
+
+        # 1. Render Student Sheet
+        student_svg = self._render_canvas(puzzles, is_solution=False)
+        student_svg.write(student_path)
+
+        # 2. Render Solution Sheet if requested
+        if solution_path:
+            solution_svg = self._render_canvas(puzzles, is_solution=True)
+            solution_svg.write(solution_path)
+
+    def _render_canvas(
+        self, puzzles: list[ZahlenmauerPuzzle], is_solution: bool
+    ) -> SVGFile:
+        svg_file = SVGFile(str(self.template_path))
+        drawing_area_node = svg_file.find_all("g[@id='drawingArea']")[0]
+        drawing_area_rect = drawing_area_node.find(".//rect", namespaces=NAMESPACE_MAP)
+
+        # Update title for solution sheet
+        title_elements = svg_file.find_all("text[@id='Title']")
+        if title_elements and is_solution:
+            tspan = title_elements[0].find(".//tspan", namespaces=NAMESPACE_MAP)
+            if tspan is not None:
+                tspan.text = "Zahlenmauer — Lösung"
+
+        # Generate pyramid SVG groups
+        pyramid_groups = [
+            self._render_single_pyramid(puzzle, idx + 1, is_solution)
+            for idx, puzzle in enumerate(puzzles)
+        ]
+
+        # Distribute on the canvas
+        distribute_groups_in_drawing_area(
+            pyramid_groups, drawing_area_rect, drawing_area_node
+        )
+
+        return svg_file
+
+    def _render_single_pyramid(
+        self, puzzle: ZahlenmauerPuzzle, index: int, is_solution: bool
+    ) -> ET.Element:
+        """
+        Builds a single Zahlenmauer pyramid group.
+        """
+        B = puzzle.base_size
+        W = DEFAULT_BRICK_WIDTH
+        H = DEFAULT_BRICK_HEIGHT
+
+        pyramid_group = ET.Element(
+            "g",
+            id=f"pyramid_{index}",
+            transform="translate(0,0)",
+        )
+
+        # Optional small label above the pyramid
+        label = ET.SubElement(
+            pyramid_group,
+            "text",
+            attrib={
+                "x": "0",
+                "y": "-2",
+                "style": "font-size:3.2mm;font-family:Arial,sans-serif;fill:#718096;font-weight:bold;",
+            },
+        )
+        label.text = f"#{index}"
+
+        # Draw bricks row by row from bottom (r=0) to apex (r=B-1)
+        for r in range(B):
+            num_bricks = B - r
+            row_x = r * (W / 2.0)
+            row_y = (B - 1 - r) * H
+
+            for c in range(num_bricks):
+                brick_x = row_x + c * W
+                brick_y = row_y
+
+                masked_val = puzzle.masked_wall[r][c]
+                full_val = puzzle.full_wall[r][c]
+                is_given = masked_val is not None
+
+                # Determine brick fill and display text
+                if is_solution:
+                    fill = CLUE_FILL if is_given else SOLUTION_FILL
+                    text_color = GIVEN_TEXT_COLOR if is_given else SOLUTION_TEXT_COLOR
+                    display_text = str(full_val)
+                else:
+                    fill = CLUE_FILL if is_given else BLANK_FILL
+                    text_color = GIVEN_TEXT_COLOR
+                    display_text = str(masked_val) if is_given else ""
+
+                # <rect> brick outline
+                ET.SubElement(
+                    pyramid_group,
+                    "rect",
+                    attrib={
+                        "x": f"{brick_x:.2f}",
+                        "y": f"{brick_y:.2f}",
+                        "width": f"{W:.2f}",
+                        "height": f"{H:.2f}",
+                        "rx": CORNER_RADIUS,
+                        "ry": CORNER_RADIUS,
+                        "style": f"fill:{fill};stroke:{BORDER_COLOR};stroke-width:{BORDER_WIDTH};",
+                    },
+                )
+
+                # <text> value
+                if display_text:
+                    text_elem = ET.SubElement(
+                        pyramid_group,
+                        "text",
+                        attrib={
+                            "x": f"{brick_x + W / 2.0:.2f}",
+                            "y": f"{brick_y + H / 2.0 + 1.2:.2f}",
+                            "style": (
+                                f"font-size:4.2mm;font-family:Arial,Helvetica,sans-serif;"
+                                f"text-anchor:middle;font-weight:bold;fill:{text_color};"
+                            ),
+                        },
+                    )
+                    text_elem.text = display_text
+
+        return pyramid_group

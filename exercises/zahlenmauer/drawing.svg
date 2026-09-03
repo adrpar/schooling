@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs id="defs1" />
+  <g id="layer1">
+    <g id="drawingArea">
+      <rect
+         style="fill:none;stroke:none;"
+         id="drawingAreaRect"
+         width="180"
+         height="240"
+         x="15"
+         y="32" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:7mm;font-family:Arial, sans-serif;text-anchor:middle;fill:#1a1a1a;"
+       x="105"
+       y="22"
+       id="Title"><tspan id="TitleSpan">Zahlenmauer</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:3.5mm;font-family:Arial, sans-serif;text-anchor:start;fill:#666666;"
+       x="15"
+       y="285"
+       id="Footer"><tspan id="FooterSpan">Name: ______________________    Datum: ____________</tspan></text>
+  </g>
+</svg>
