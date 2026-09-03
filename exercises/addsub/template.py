@@ -1,7 +1,12 @@
-from addSubWritten.algorithm import Operator
+from pathlib import Path
+
+from core.operators import Operator
+from exercises.utils import operator_to_string
 from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
 from svg.svg_groups import distribute_groups_in_drawing_area
 from svg.svg_handler import SVGFile
+
+_TEMPLATE = Path(__file__).parent / "drawing.svg"
 
 
 class AddSubTemplate:
@@ -13,7 +18,7 @@ class AddSubTemplate:
     CONFIG_SPAN = "ConfigSpan"
 
     def __init__(self):
-        self.svg = SVGFile("addSubWritten/drawing.svg")
+        self.svg = SVGFile(str(_TEMPLATE))
 
         text_elements = self.svg.find_all_elements_by_attributes("text", "id")
 
@@ -33,17 +38,17 @@ class AddSubTemplate:
         ).get("drawingAreaRect")
 
     def create_new(self, algorithm, filename_addsub):
-        operator_string = self._get_operator_string(algorithm.operations)
+        op_string = operator_to_string(algorithm.operations)
         self.title_tspan_elements[self.CONFIG_SPAN].text = (
             "Operators: {} - Max Num: {} - Seed: {}".format(
-                operator_string, algorithm.max_value, algorithm.seed
+                op_string, algorithm.max_value, algorithm.seed
             )
         )
 
         exercises = []
         exercise_nodes = []
         for operator, values in algorithm.result:
-            exercise = WrittenCalcExerciseBox(operator, values)  # Updated reference
+            exercise = WrittenCalcExerciseBox(operator, values)
             svg_node = exercise.generateBox()
 
             exercises.append(exercise)
@@ -59,16 +64,3 @@ class AddSubTemplate:
 
     def _set_text(self, element, text):
         element[0].text = text
-
-    def _get_operator_string(self, operators):
-        result = ""
-        for operator in operators:
-            if operator == Operator.ADDITION:
-                result = result + "+"
-            elif operator == Operator.SUBTRACTION:
-                result = result + "-"
-            elif operator == Operator.MULTIPLICATION:
-                result = result + "*"
-            elif operator == Operator.DIVISION:
-                result = result + "/"
-        return result

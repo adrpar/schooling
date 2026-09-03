@@ -1,5 +1,6 @@
 import unittest
-from mathrally.algorithm import RallyAlgorithm, Operator
+from exercises.mathrally.algorithm import RallyAlgorithm
+from core.operators import Operator
 
 
 class TestRallyAlgorithm(unittest.TestCase):

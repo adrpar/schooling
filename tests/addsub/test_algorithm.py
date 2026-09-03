@@ -1,5 +1,6 @@
 import pytest
-from addSubWritten.algorithm import AddSubAlgorithm, Operator
+from exercises.addsub.algorithm import AddSubAlgorithm
+from core.operators import Operator
 
 
 def test_operator_enum():

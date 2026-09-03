@@ -1,14 +1,11 @@
+import logging
 from random import choice, randrange, seed
-from enum import Enum
 
-__all__ = ["RallyAlgorithm", "Operator"]
+from core.operators import Operator
 
+__all__ = ["RallyAlgorithm"]
 
-class Operator(Enum):
-    ADDITION = 1
-    SUBTRACTION = 2
-    MULTIPLICATION = 3
-    DIVISION = 4
+logger = logging.getLogger(__name__)
 
 
 class RallyAlgorithm:
@@ -54,11 +51,17 @@ class RallyAlgorithm:
                     curr_result = results[-1][2] / value
 
                 if self.choice_criterium(curr_result, operator, value, results):
-                    print("CHOICE: ", results[-1][2], operator, value, curr_result)
+                    logger.debug(
+                        "CHOICE: %s %s %s → %s",
+                        results[-1][2],
+                        operator,
+                        value,
+                        curr_result,
+                    )
                     results.append((operator, value, curr_result))
                     break
                 else:
-                    print(operator, value, curr_result)
+                    logger.debug("Rejected: %s %s → %s", operator, value, curr_result)
 
         self.result = results
 

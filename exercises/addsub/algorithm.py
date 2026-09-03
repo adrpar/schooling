@@ -1,15 +1,12 @@
+import logging
 from copy import deepcopy
-from enum import Enum
 from random import choice, randrange, seed
 
-__all__ = ["AddSubAlgorithm", "Operator"]
+from core.operators import Operator
 
+__all__ = ["AddSubAlgorithm"]
 
-class Operator(Enum):
-    ADDITION = 1
-    SUBTRACTION = 2
-    MULTIPLICATION = 3
-    DIVISION = 4
+logger = logging.getLogger(__name__)
 
 
 class AddSubAlgorithm:
@@ -59,11 +56,11 @@ class AddSubAlgorithm:
                     )
 
                 if self.choice_criterium(operator, values):
-                    print("CHOICE: ", operator, values)
+                    logger.debug("CHOICE: %s %s", operator, values)
                     results.append((operator, values))
                     break
                 else:
-                    print(operator, values)
+                    logger.debug("Rejected: %s %s", operator, values)
 
         self.result = results
 

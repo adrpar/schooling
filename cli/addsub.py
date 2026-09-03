@@ -1,7 +1,7 @@
 import os
 import tempfile
 import click
-from addSubWritten.addsub import (
+from exercises.addsub.addsub import (
     OPERATORS,
     MIN_VALUE,
     MAX_VALUE,
@@ -9,8 +9,8 @@ from addSubWritten.addsub import (
     NUM_ROWS_PER_EXERCISE,
     SEED,
 )
-from addSubWritten.algorithm import AddSubAlgorithm
-from addSubWritten.template import AddSubTemplate
+from exercises.addsub.algorithm import AddSubAlgorithm
+from exercises.addsub.template import AddSubTemplate
 from svg.svg_handler import render_svg_to_pdf
 
 
@@ -54,3 +54,8 @@ def addsub(output, format):
         for temp_file in temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+if __name__ == "__main__":
+    addsub()
+

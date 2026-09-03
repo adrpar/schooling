@@ -1,8 +1,8 @@
 import os
 import tempfile
 import click
-from mathrally.algorithm import RallyAlgorithm
-from mathrally.mathrally import (
+from exercises.mathrally.algorithm import RallyAlgorithm
+from exercises.mathrally.mathrally import (
     OPERATORS,
     MIN_VALUE,
     MAX_VALUE,
@@ -10,7 +10,7 @@ from mathrally.mathrally import (
     TEMPLATE_PATH,
     TEMPLATE_NAME,
 )
-from mathrally.template import RallyTemplate
+from exercises.mathrally.template import RallyTemplate
 from svg.svg_handler import render_svg_to_pdf
 
 
@@ -60,3 +60,8 @@ def mathrally(output, solution, format):
         for temp_file in temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+if __name__ == "__main__":
+    mathrally()
+

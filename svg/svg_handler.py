@@ -57,6 +57,25 @@ class SvgNode:
         return {element.attrib[attribute]: element for element in elements}
 
 
+import os
+
+
+def _ensure_inkscape():
+    """Ensure Inkscape executable is discoverable by inkex."""
+    if not inkex.command.is_inkscape_available():
+        candidate_dirs = [
+            "/Applications/Inkscape.app/Contents/MacOS",
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            os.path.expanduser("~/.local/bin"),
+        ]
+        for candidate_dir in candidate_dirs:
+            candidate_bin = os.path.join(candidate_dir, "inkscape")
+            if os.path.isfile(candidate_bin) and os.access(candidate_bin, os.X_OK):
+                os.environ["PATH"] = f"{candidate_dir}:{os.environ.get('PATH', '')}"
+                break
+
+
 def render_svg_to_pdf(svg_path, pdf_path):
     """
     Converts an SVG file to a PDF using Inkex.
@@ -64,6 +83,7 @@ def render_svg_to_pdf(svg_path, pdf_path):
     :param svg_path: Path to the input SVG file.
     :param pdf_path: Path to the output PDF file.
     """
+    _ensure_inkscape()
     if not inkex.command.is_inkscape_available():
         raise RuntimeError("Inkscape is not available. Please install it.")
 

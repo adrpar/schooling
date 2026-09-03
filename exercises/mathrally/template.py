@@ -1,4 +1,5 @@
-from addSubWritten.algorithm import Operator
+from core.operators import Operator
+from exercises.utils import operator_to_string
 from svg.svg_handler import SVGFile
 
 
@@ -72,17 +73,12 @@ class RallyTemplate:
         solution_copy = RallyTemplate(self.file_name)
         rally_copy = RallyTemplate(self.file_name)
 
-        operator_string = self._get_operator_string(algorithm_results.operations)
-        solution_copy.title_tspan_elements[self.CONFIG_SPAN].text = (
-            "Operators: {} - Max Num: {} - Seed: {}".format(
-                operator_string, algorithm_results.max_value, algorithm_results.seed
-            )
+        op_string = operator_to_string(algorithm_results.operations)
+        config_text = "Operators: {} - Max Num: {} - Seed: {}".format(
+            op_string, algorithm_results.max_value, algorithm_results.seed
         )
-        rally_copy.title_tspan_elements[self.CONFIG_SPAN].text = (
-            "Operators: {} - Max Num: {} - Seed: {}".format(
-                operator_string, algorithm_results.max_value, algorithm_results.seed
-            )
-        )
+        solution_copy.title_tspan_elements[self.CONFIG_SPAN].text = config_text
+        rally_copy.title_tspan_elements[self.CONFIG_SPAN].text = config_text
 
         for i, element in enumerate(algorithm_results.result):
             if i == 0:
@@ -99,7 +95,7 @@ class RallyTemplate:
                 )
                 self._set_text(rally_copy.value_elements["value.{}".format(i)], "")
                 operator_text = "{}{}".format(
-                    self._get_operator_string([element[0]]), element[1]
+                    operator_to_string([element[0]]), element[1]
                 )
                 self._set_text(
                     solution_copy.operator_elements["operatorText.{}".format(i - 1)],
@@ -115,16 +111,3 @@ class RallyTemplate:
 
     def _set_text(self, element, text):
         element[0].text = text
-
-    def _get_operator_string(self, operators):
-        result = ""
-        for operator in operators:
-            if operator == Operator.ADDITION:
-                result = result + "+"
-            elif operator == Operator.SUBTRACTION:
-                result = result + "-"
-            elif operator == Operator.MULTIPLICATION:
-                result = result + "*"
-            elif operator == Operator.DIVISION:
-                result = result + "/"
-        return result
