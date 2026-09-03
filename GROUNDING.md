@@ -116,12 +116,12 @@ PDF export: Inkscape is invoked via `inkex.command.inkscape()`. A temp SVG is wr
 | `lxml` | ≥5.3 | SVG XML parsing & construction |
 | `inkex` | ≥1.4.1 | Inkscape Python API — PDF export via `inkex.command` |
 | `click` | ≥8.1.8 | CLI argument parsing |
-| `black` | ≥25.1 | Code formatter |
-| `pytest` | ≥8.3.5 | Test runner |
+| `black` | ≥26.5 | Code formatter (dev group) |
+| `pytest` | ≥9.1 | Test runner (dev group) |
 | Python | ≥3.12 | Runtime |
 | **Inkscape** (system) | — | PDF rendering (external binary dependency; auto-discovered from PATH or macOS `/Applications/Inkscape.app`) |
 
-Package managed with `uv` (uv.lock present) and `pip` (Pipfile + requirements.txt also present — see §7).
+Package and project management is fully consolidated under **`uv`** via `pyproject.toml` and `uv.lock`.
 
 ---
 
@@ -153,8 +153,8 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | Q8 | ~~**`_get_operator_string` duplicated**~~ | ~~`mathrally/template.py`, `addSubWritten/template.py`~~ | ✅ **Resolved.** Extracted to `exercises/utils.py` as `operator_to_string()`. Both templates now call the shared function. |
 | Q9 | ~~**`SVGFile.find_all_elements_by_attributes` crashes if element lacks the attribute**~~ | ~~`svg/svg_handler.py`~~ | ✅ **Resolved.** Added `if attribute in element.attrib` guard. |
 | Q10 | **`calculate_group_dimensions` only handles `translate()` transforms** | `svg/svg_groups.py` L21 | `rotate`, `scale`, `matrix` transforms are silently ignored. Not a current blocker but will break with richer SVGs. |
-| Q11 | **Multiple package management systems** | Root | `Pipfile` + `Pipfile.lock` + `requirements.txt` + `uv.lock` + `pyproject.toml`. Pick one (recommend `uv` / `pyproject.toml`). |
-| Q12 | **`tool>=0.8.0` in dependencies** | `pyproject.toml` L13 | Suspicious dependency — likely accidental or a typo. Needs investigation. |
+| Q11 | ~~**Multiple package management systems**~~ | ~~Root~~ | ✅ **Resolved.** Consolidated solely on `uv` + `pyproject.toml`. Removed Pipfile, Pipfile.lock, requirements.txt, setup.py. |
+| Q12 | ~~**`tool>=0.8.0` in dependencies**~~ | ~~`pyproject.toml`~~ | ✅ **Resolved.** Removed unused `tool` dependency and its transitive packages. |
 | Q13 | **`__init__.py` contents** | `exercises/*/` | Should document public API. |
 | Q24 | ~~**Ad-hoc operand generation for `*` and `/` in `RallyAlgorithm`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Multiplication picks multipliers in `2..10`; division chooses from exact integer divisors of `curr_val`. |
 | Q25 | ~~**`NumericalPaperCell` re-parses XML string on every cell instantiation**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Builds prototype elements programmatically once with `lxml.etree` and deep-copies per cell. |
@@ -169,7 +169,7 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | Q14 | **No type hints** | All modules | The codebase would benefit from type annotations for maintainability. |
 | Q15 | **`_set_text(element, text)` uses `element[0]`** | `mathrally/template.py` L117 | Indexing a dict value with `[0]` is fragile — the dict value is a single element, not a list. Either rename or fix. |
 | Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms and SVG components; full suite now 38 tests. |
-| Q17 | **Output SVG files checked into root** | Root | `rally.svg`, `addsub.svg`, `test_*.svg` etc. are committed. Add to `.gitignore` or move to a designated `output/` folder. |
+| Q17 | ~~**Output SVG files checked into root**~~ | ~~Root~~ | ✅ **Resolved.** `.gitignore` ignores generated `*.svg`, `*.pdf`, and `output.png` while preserving template SVGs. |
 | Q18 | ~~**Inline SVG string template in `paper_cell.py`**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Replaced by clean programmatic `lxml.etree` element creation. |
 
 ---
@@ -183,7 +183,7 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | D3 | A4 portrait as the standard page format | ✅ | All templates are 210×297mm. |
 | D4 | Seeded RNG for reproducibility | ✅ | Both algorithms accept a seed, making sheets reproducible by seed+config. This is a key feature for teachers. |
 | D5 | Where to define the shared `Operator` enum | ✅ | Lives in `core/operators.py`. Imported by all algorithm and template modules. |
-| D6 | Package management: `uv` vs `pip` | ❓ | `uv.lock` exists alongside `Pipfile`. Recommend settling on `uv` + `pyproject.toml`. |
+| D6 | Package management: `uv` vs `pip` | ✅ | Settled on `uv` as the single package manager. `pyproject.toml` is canonical with `[dependency-groups]` for dev. |
 | D7 | New exercise type structure | ✅ | All exercise types live under `exercises/<type>/`. Existing types (`mathrally`, `addsub`) moved. New types follow the same pattern. |
 | D8 | CLI parameter exposure | ❓ | Config (seed, max_value, operators) is currently hardcoded. Should CLI expose all params, or should there be a config file? |
 

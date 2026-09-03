@@ -10,5 +10,13 @@ wheels/
 .venv
 
 .DS_Store
-Pipfile*
 *sublime*
+
+# Generated output artifacts (Q17)
+*.svg
+*.pdf
+output.png
+
+# Keep SVG templates in img/ and exercises/
+!img/*.svg
+!exercises/**/*.svg
