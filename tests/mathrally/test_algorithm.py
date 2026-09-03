@@ -65,9 +65,48 @@ class TestRallyAlgorithm(unittest.TestCase):
         )
 
     def test_no_solution_exception(self):
-        algorithm = RallyAlgorithm([Operator.DIVISION], 1, 10, 1, self.rand_seed)
+        # Impossible configuration: division on 1 with divisors >= 2 cannot yield integer >= 1
+        algorithm = RallyAlgorithm([Operator.DIVISION], 1, 2, 1, self.rand_seed)
         with self.assertRaises(RuntimeError):
             algorithm.build_rally()
+
+    def test_min_value_enforced(self):
+        # When min_value is high (e.g. 25), start and intermediate results must stay >= 25
+        algorithm = RallyAlgorithm(
+            [Operator.ADDITION, Operator.SUBTRACTION],
+            min_value=25,
+            max_value=100,
+            num_operators=5,
+            rand_seed=123,
+        )
+        algorithm.build_rally()
+        for step in algorithm.result:
+            self.assertGreaterEqual(step[2], 25)
+
+    def test_division_produces_integers(self):
+        algorithm = RallyAlgorithm(
+            [Operator.DIVISION, Operator.MULTIPLICATION],
+            min_value=1,
+            max_value=100,
+            num_operators=5,
+            rand_seed=7875,
+        )
+        algorithm.build_rally()
+        for step in algorithm.result:
+            self.assertIsInstance(step[2], int)
+
+    def test_rng_isolation(self):
+        import random
+        random.seed(999)
+        val_before = random.random()
+        random.seed(999)
+
+        algorithm = RallyAlgorithm(self.operator_list, self.min_value, self.max_value, self.num_operators, 42)
+        algorithm.build_rally()
+
+        # Global random state must not have been modified by RallyAlgorithm
+        val_after = random.random()
+        self.assertEqual(val_before, val_after)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,5 @@
 import logging
-from copy import deepcopy
-from random import choice, randrange, seed
+from random import Random
 
 from core.operators import Operator
 
@@ -25,26 +24,23 @@ class AddSubAlgorithm:
         self.num_exercises = num_exercises
         self.num_rows_per_exercise = num_rows_per_exercise
         self.seed = rand_seed
-
-        seed(rand_seed)
+        self.rng = Random(rand_seed)
 
     def build_addsub(self):
         results = []
 
-        start = randrange(self.max_value)
-
-        for i in range(self.num_exercises):
-            operator = choice(self.operations)
+        for _ in range(self.num_exercises):
+            operator = self.rng.choice(self.operations)
 
             counter = 0
             while True:
                 counter += 1
-                if counter > 10:
+                if counter > 100:
                     raise RuntimeError("addsub has no solution. Infinite loop.")
 
                 values = [
-                    randrange(self.min_value, self.max_value)
-                    for i in range(self.num_rows_per_exercise)
+                    self.rng.randrange(self.min_value, max(self.min_value + 1, self.max_value))
+                    for _ in range(self.num_rows_per_exercise)
                 ]
 
                 if operator == Operator.SUBTRACTION:
@@ -70,9 +66,7 @@ class AddSubAlgorithm:
                 return False
 
         if operator == Operator.SUBTRACTION:
-            value_copy = deepcopy(values)
-            value_copy[0] = -1 * value_copy[0]
-            if sum([-1 * v for v in value_copy]) < 0:
+            if values[0] - sum(values[1:]) < 0:
                 return False
 
         return True
