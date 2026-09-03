@@ -82,10 +82,10 @@ cli/addsub.py     ─→  exercises/addsub/     ─→  svg/
 
 | File | What it does |
 |------|-------------|
-| `svg_handler.py` | `SVGFile` — thin wrapper over `lxml.etree` for loading/writing SVG and querying elements. `SvgNode` — same but for in-memory sub-trees. `render_svg_to_pdf()` — calls Inkscape via `inkex.command`. |
-| `svg_groups.py` | `calculate_group_dimensions()` — recursive bounding-box calculation from `transform` attributes. `parse_transform()` — regex-based translate extractor. `distribute_groups_in_drawing_area()` — row-based layout engine with justified spacing. |
-| `number_paper/paper_cell.py` | Single grid cell (number-paper square). |
-| `number_paper/written_calc_exercise_box.py` | Full column-calculation box. Uses `Operator` from `core.operators`. |
+| `svg_handler.py` | `NAMESPACE_MAP` — single canonical SVG namespace mapping. `SVGFile` — thin wrapper over `lxml.etree` for loading/writing SVG and querying elements. `SvgNode` — same but for in-memory sub-trees. `render_svg_to_pdf()` — calls Inkscape via `inkex.command` with auto-discovery on macOS/Linux. |
+| `svg_groups.py` | `calculate_group_dimensions()` — recursive bounding-box calculation from transforms, supporting `<rect>`, `<line>`, `<circle>`, `<ellipse>`. `distribute_groups_in_drawing_area()` — row-based layout engine with justified spacing, cached bboxes, and overflow warnings. |
+| `number_paper/paper_cell.py` | `NumericalPaperCell` — grid cell built from programmatic prototypes (`lxml.etree`) with `text-anchor: middle` auto-centering. |
+| `number_paper/written_calc_exercise_box.py` | Full column-calculation box assembled from cells and separator lines. Uses `Operator` from `core.operators` and `NAMESPACE_MAP` from `svg_handler`. |
 
 ---
 
@@ -148,19 +148,19 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 
 | # | Issue | Location | Notes |
 |---|-------|----------|-------|
-| Q6 | **Duplicated `NAMESPACE_MAP`** | `svg_handler.py`, `written_calc_exercise_box.py`, `paper_cell.py` | Three identical copies. Define once in `svg_handler.py` and import. |
-| Q7 | **`distribute_groups_in_drawing_area` silently drops exercises** | `svg/svg_groups.py` L105 | If a page overflows, exercises are silently discarded. Should at minimum log a warning, ideally raise or return unplaced items. |
+| Q6 | ~~**Duplicated `NAMESPACE_MAP`**~~ | ~~`svg_handler.py`, `written_calc_exercise_box.py`, `paper_cell.py`~~ | ✅ **Resolved.** Defined as single module-level constant in `svg/svg_handler.py` and imported everywhere. |
+| Q7 | ~~**`distribute_groups_in_drawing_area` silently drops exercises**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** Now logs a warning with count of dropped exercises when height is exceeded. |
 | Q8 | ~~**`_get_operator_string` duplicated**~~ | ~~`mathrally/template.py`, `addSubWritten/template.py`~~ | ✅ **Resolved.** Extracted to `exercises/utils.py` as `operator_to_string()`. Both templates now call the shared function. |
-| Q9 | **`SVGFile.find_all_elements_by_attributes` crashes if element lacks the attribute** | `svg/svg_handler.py` L24 | No guard for missing `attribute` key — raises `KeyError`. |
+| Q9 | ~~**`SVGFile.find_all_elements_by_attributes` crashes if element lacks the attribute**~~ | ~~`svg/svg_handler.py`~~ | ✅ **Resolved.** Added `if attribute in element.attrib` guard. |
 | Q10 | **`calculate_group_dimensions` only handles `translate()` transforms** | `svg/svg_groups.py` L21 | `rotate`, `scale`, `matrix` transforms are silently ignored. Not a current blocker but will break with richer SVGs. |
 | Q11 | **Multiple package management systems** | Root | `Pipfile` + `Pipfile.lock` + `requirements.txt` + `uv.lock` + `pyproject.toml`. Pick one (recommend `uv` / `pyproject.toml`). |
 | Q12 | **`tool>=0.8.0` in dependencies** | `pyproject.toml` L13 | Suspicious dependency — likely accidental or a typo. Needs investigation. |
 | Q13 | **`__init__.py` contents** | `exercises/*/` | Should document public API. |
 | Q24 | ~~**Ad-hoc operand generation for `*` and `/` in `RallyAlgorithm`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Multiplication picks multipliers in `2..10`; division chooses from exact integer divisors of `curr_val`. |
-| Q25 | **`NumericalPaperCell` re-parses XML string on every cell instantiation** | `svg/number_paper/paper_cell.py` L28 | Re-parsing `BOX_TEMPLATE` ~900 times per page. Parse once or construct programmatically. |
-| Q26 | **`distribute_groups_in_drawing_area` redundant bbox calculations & duplicated code** | `svg/svg_groups.py` | Repeatedly computes bounding boxes in inner loops. Duplicated row layout code block. |
-| Q27 | **`calculate_group_dimensions` ignores non-rect primitives** | `svg/svg_groups.py` L34-41 | Only checks `attrib["width"]` (works for `<rect>`). Ignores `<line>`, `<circle>`, `<text>`, `<path>`. |
-| Q28 | **Magic coordinate nudges in `NumericalPaperCell`** | `svg/number_paper/paper_cell.py` L52-59 | Manual x/y nudges because text uses `text-anchor: start`. Switching to `text-anchor: middle` eliminates nudges. |
+| Q25 | ~~**`NumericalPaperCell` re-parses XML string on every cell instantiation**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Builds prototype elements programmatically once with `lxml.etree` and deep-copies per cell. |
+| Q26 | ~~**`distribute_groups_in_drawing_area` redundant bbox calculations & duplicated code**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** Bboxes cached once per element; shared `_flush_row()` helper deduplicates row layout. |
+| Q27 | ~~**`calculate_group_dimensions` ignores non-rect primitives**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** `_element_bbox()` handles `<line>` (x1/y1/x2/y2), `<circle>`, `<ellipse>`, and rects. |
+| Q28 | ~~**Magic coordinate nudges in `NumericalPaperCell`**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Switched text to `text-anchor: middle` at cell center (`x=2.943`). Operators center automatically. |
 
 ### 🟢 Low Priority / Nice to Have
 
@@ -168,9 +168,9 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 |---|-------|----------|-------|
 | Q14 | **No type hints** | All modules | The codebase would benefit from type annotations for maintainability. |
 | Q15 | **`_set_text(element, text)` uses `element[0]`** | `mathrally/template.py` L117 | Indexing a dict value with `[0]` is fragile — the dict value is a single element, not a list. Either rename or fix. |
-| Q16 | **Test coverage is integration-only** | `tests/` | Only PDF export is tested. No unit tests for algorithms or SVG construction. |
+| Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms and SVG components; full suite now 38 tests. |
 | Q17 | **Output SVG files checked into root** | Root | `rally.svg`, `addsub.svg`, `test_*.svg` etc. are committed. Add to `.gitignore` or move to a designated `output/` folder. |
-| Q18 | **Inline SVG string template in `paper_cell.py`** | `svg/number_paper/paper_cell.py` L4–L11 | The `BOX_TEMPLATE` is an Inkscape-produced SVG pasted inline. Works, but the sodipodi/inkscape namespaces will be stripped/mangled on save. Consider clean minimal SVG or an external template file. |
+| Q18 | ~~**Inline SVG string template in `paper_cell.py`**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Replaced by clean programmatic `lxml.etree` element creation. |
 
 ---
 
@@ -199,13 +199,10 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
    - Resolved Q19, Q20, Q21, Q22, Q23, Q24.
    - Isolated RNG instances, int division, clean subtraction verification, increased attempt limits.
    - Added unit tests for bounds, int types, and RNG isolation (38/38 passing).
-3. 🔄 **Phase 2: SVG Layout & Cell Engine Streamlining**
-   - Fix Q25: Optimize `NumericalPaperCell` template instantiation.
-   - Fix Q26: Remove redundant bounding-box calculations & deduplicate row layout code in `svg_groups.py`.
-   - Fix Q27: Support `<line>`, `<text>` in bounding box calculations.
-   - Fix Q28: Simplify cell text centering with `text-anchor: middle`.
-   - Fix Q6: Unify `NAMESPACE_MAP`.
-4. **Phase 3: Design & Build Next Exercise Type**
+3. ✅ **Phase 2: SVG Layout & Cell Engine Streamlining**
+   - Resolved Q6, Q7, Q9, Q18, Q25, Q26, Q27, Q28.
+   - Programmatic cell prototyping, text centering without offsets, cached bbox calculations, non-rect support, overflow logging.
+4. 🔄 **Phase 3: Design & Build Next Exercise Type**
    - Pick new exercise type (e.g. Pyramid / Rechenmauer, Multiplication Table / Einmaleins, or Number Line / Zahlenstrahl).
    - Implement algorithm under `exercises/<type>/algorithm.py`.
    - Implement SVG rendering under `exercises/<type>/template.py`.
