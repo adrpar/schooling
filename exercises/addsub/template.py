@@ -7,7 +7,7 @@ from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
 from svg.svg_groups import distribute_groups_in_drawing_area
 from svg.template import Template, Element, validate_template
 
-_TEMPLATE = Path(__file__).parent / "drawing.svg"
+_TEMPLATE = Path(__file__).parent / "template" / "addsub.svg"
 
 
 class AddSubTemplate:

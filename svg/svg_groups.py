@@ -107,16 +107,25 @@ def _flush_row(row_elements, row_bboxes, current_y, drawing_box_origin_x,
         drawing_area_group.append(elem)
 
 
-def distribute_groups_in_drawing_area(group_list, drawing_area, drawing_area_group):
-    drawing_box_origin_x = float(drawing_area.attrib["x"])
-    drawing_box_origin_y = float(drawing_area.attrib["y"])
-    drawing_box_width = float(drawing_area.attrib["width"])
-    drawing_box_height = float(drawing_area.attrib["height"])
+from typing import Sequence
+
+def distribute_groups_in_drawing_area(
+    group_list: Sequence,
+    drawing_area: "Element",
+    drawing_area_group: "Element",
+):
+    """
+    Distribute a list of groups into rows within the drawing area.
+    """
+    drawing_box_origin_x = float(drawing_area.get_attribute("x"))
+    drawing_box_origin_y = float(drawing_area.get_attribute("y"))
+    drawing_box_width = float(drawing_area.get_attribute("width"))
+    drawing_box_height = float(drawing_area.get_attribute("height"))
 
     current_x, current_y = drawing_box_origin_x, drawing_box_origin_y
     row_spacing = 10
     row_height = 0
-    row_elements = []
+    row_elements: list[tuple["Element", tuple[float, float, float]]] = []
     row_bboxes = []  # list of (element, width, height) — compute once per element (Q26)
 
     for exercise in group_list:

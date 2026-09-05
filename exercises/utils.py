@@ -12,6 +12,6 @@ _OPERATOR_SYMBOLS = {
 }
 
 
-def operator_to_string(operators) -> str:
+def operator_to_string(operators: list[Operator]) -> str:
     """Return a compact symbol string for a list of Operators (e.g. [+, -] → '+-')."""
     return "".join(_OPERATOR_SYMBOLS[op] for op in operators)

@@ -5,7 +5,7 @@ import lxml.etree as ET
 
 from exercises.zahlenmauer.algorithm import ZahlenmauerAlgorithm, ZahlenmauerPuzzle
 from svg.svg_groups import distribute_groups_in_drawing_area
-from svg.svg_handler import NAMESPACE_MAP, SVGFile
+from svg.template import Template, validate_template
 
 __all__ = ["ZahlenmauerTemplate"]
 
@@ -32,10 +32,10 @@ SOLUTION_FILL = "#ebf8ff"   # Soft blue for solved answers
 
 
 class ZahlenmauerTemplate:
+    """Generic SVG template for Zahlenmauer puzzles using Template class."""
+    
     def __init__(self, template_path: Optional[str | Path] = None):
-        if template_path is None:
-            template_path = Path(__file__).parent / "drawing.svg"
-        self.template_path = Path(template_path)
+        self.template = Template(template_path or Path(__file__).parent / "template" / "zahlenmauer.svg")
 
     def create_sheets(
         self,
@@ -53,27 +53,28 @@ class ZahlenmauerTemplate:
         puzzles = algorithm.puzzles if algorithm.puzzles else algorithm.build()
 
         # 1. Render Student Sheet
-        student_svg = self._render_canvas(puzzles, is_solution=False)
-        student_svg.write(student_path)
+        student_template = self._render_canvas(puzzles, is_solution=False)
+        student_template.write(student_path)
 
         # 2. Render Solution Sheet if requested
         if solution_path:
-            solution_svg = self._render_canvas(puzzles, is_solution=True)
-            solution_svg.write(solution_path)
+            solution_template = self._render_canvas(puzzles, is_solution=True)
+            solution_template.write(solution_path)
 
     def _render_canvas(
         self, puzzles: list[ZahlenmauerPuzzle], is_solution: bool
-    ) -> SVGFile:
-        svg_file = SVGFile(str(self.template_path))
-        drawing_area_node = svg_file.find_all("g[@id='drawingArea']")[0]
-        drawing_area_rect = drawing_area_node.find(".//rect", namespaces=NAMESPACE_MAP)
+    ) -> Template:
+        template = Template(str(Path(__file__).parent / "template" / "zahlenmauer.svg"))
+        
+        drawing_area_node = template.get_element_by_id("drawingArea")
+        drawing_area_rect = template.find_by_tag_and_attribute(
+            drawing_area_node, "rect", "id"
+        )
 
         # Update title for solution sheet
-        title_elements = svg_file.find_all("text[@id='Title']")
+        title_elements = template.find_all_by_tag("tspan", template.get_element_by_id("Title"))
         if title_elements and is_solution:
-            tspan = title_elements[0].find(".//tspan", namespaces=NAMESPACE_MAP)
-            if tspan is not None:
-                tspan.text = "Zahlenmauer — Lösung"
+            title_elements[0].set_text("Zahlenmauer — Lösung")
 
         # Generate pyramid SVG groups
         pyramid_groups = [
@@ -86,7 +87,7 @@ class ZahlenmauerTemplate:
             pyramid_groups, drawing_area_rect, drawing_area_node
         )
 
-        return svg_file
+        return template
 
     def _render_single_pyramid(
         self, puzzle: ZahlenmauerPuzzle, index: int, is_solution: bool
