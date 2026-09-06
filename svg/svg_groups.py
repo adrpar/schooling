@@ -109,6 +109,47 @@ def _flush_row(row_elements, row_bboxes, current_y, drawing_box_origin_x,
 
 from typing import Sequence
 
+class Element:
+    """Generic Element class that wraps an SVG node with generic methods."""
+    
+    def __init__(self, node):
+        self.node = node
+        self.tag = node.tag.split("}")[-1] if "}" in node.tag else node.tag
+        self.attrib = node.attrib
+        self.text = node.text
+        self.tail = node.tail
+        self._children = list(node)
+    
+    def get_attribute(self, name):
+        """Get attribute value by name."""
+        return self.attrib.get(name)
+    
+    def set_attribute(self, name, value):
+        """Set attribute value by name."""
+        self.attrib[name] = value
+    
+    def get_text(self):
+        """Get element's text content."""
+        return self.text
+    
+    def set_text(self, text):
+        """Set element's text content."""
+        self.text = text
+    
+    def find_all_in_node(self, tag):
+        """Find all elements with given tag."""
+        return self.node.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
+    
+    def find_by_attribute(self, tag, attribute):
+        """Find elements by tag and attribute."""
+        elements = self.find_all_in_node(tag)
+        return {element.get_attribute(attribute): element for element in elements}
+    
+    def find_by_tag_and_attribute(self, node, tag, attribute):
+        """Find elements by tag and attribute within a node."""
+        elements = node.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
+        return {element.get_attribute(attribute): element for element in elements if element.get_attribute(attribute)}
+
 def distribute_groups_in_drawing_area(
     group_list: Sequence,
     drawing_area: "Element",

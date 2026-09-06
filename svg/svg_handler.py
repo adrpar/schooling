@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from typing import Optional
 
 import lxml.etree as ET
 import inkex
@@ -11,6 +13,31 @@ NAMESPACE_MAP = {
     "xmlns": "http://www.w3.org/2000/xmlns/",
     None: "http://www.w3.org/2000/svg",
 }
+
+
+class Template:
+    """Generic SVG template that can be loaded from a file."""
+    
+    def __init__(self, path: Optional[str] = None):
+        self.template_path = Path(path) if path else None
+        if self.template_path:
+            self.svg_xml = ET.parse(self.template_path)
+            self.svg = self.svg_xml.getroot()
+
+    def get_element(self, element_id: str):
+        """Get element by ID."""
+        elements = self.find_all_by_tag("element", self.NAMESPACE_MAP)
+        return next((e for e in elements if e.get_attribute("id") == element_id), None)
+    
+    def find_all_by_tag(self, tag: str, namespaces: dict = None):
+        """Find all elements with given tag."""
+        if namespaces is None:
+            namespaces = self.NAMESPACE_MAP
+        return self.svg.findall(".//" + tag, namespaces=namespaces)
+    
+    def write(self, path: str):
+        """Write template to file."""
+        self.svg_xml.write(path)
 
 
 class SVGFile:
@@ -37,7 +64,7 @@ class SVGFile:
 
     def find_all_elements_by_attributes_in_node(self, node, tag, attribute):
         elements = self.find_all_in_node(node, tag)
-        return {element.attrib[attribute]: element for element in elements}
+        return {element.get_attribute(attribute): element for element in elements}
 
     def all_spans_in_text(self, text_node):
         return text_node.findall(".//tspan", namespaces=self.NAMESPACE_MAP)
@@ -57,7 +84,7 @@ class SvgNode:
 
     def find_all_elements_by_attributes_in_node(self, tag, attribute):
         elements = self.find_all_in_node(tag)
-        return {element.attrib[attribute]: element for element in elements}
+        return {element.get_attribute(attribute): element for element in elements}
 
 
 def _ensure_inkscape():
