@@ -1,66 +1,38 @@
 from pathlib import Path
+from typing import Optional, Union
 
-from core.operators import Operator
 from exercises.utils import operator_to_string
+from svg.canvas_template import CanvasExerciseTemplate
 from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
-from svg.svg_groups import distribute_groups_in_drawing_area
-from svg.svg_handler import SVGFile
 
 _TEMPLATE = Path(__file__).parent / "drawing.svg"
 
 
-class AddSubTemplate:
+class AddSubTemplate(CanvasExerciseTemplate):
+    """Template for generating AddSub written calculation exercise sheets."""
+
     VALUE_ID_PREFIX = "value"
     OPERATOR_TEXT_ID_PREFIX = "operatorText"
-    TITLE_ID = "Title"
 
-    TITLE_SPAN = "TitleSpan"
-    CONFIG_SPAN = "ConfigSpan"
+    def __init__(self, template_path: Optional[Union[str, Path]] = None):
+        super().__init__(template_path or _TEMPLATE)
+        # Retain backward-compatible properties
+        self.svg = self.doc
+        self.title_tspan_elements = self.title_tspans
 
-    def __init__(self):
-        self.svg = SVGFile(str(_TEMPLATE))
-
-        text_elements = self.svg.find_all_elements_by_attributes("text", "id")
-
-        self.title_element = text_elements[self.TITLE_ID]
-
-        title_tspan_elements = self.svg.all_spans_in_text(self.title_element)
-        self.title_tspan_elements = {
-            element.attrib["id"]: element for element in title_tspan_elements
-        }
-
-        self.drawing_area_group = self.svg.find_all_elements_by_attributes(
-            "g", "id"
-        ).get("drawingArea")
-
-        self.drawing_area = self.svg.find_all_elements_by_attributes_in_node(
-            self.drawing_area_group, "rect", "id"
-        ).get("drawingAreaRect")
-
-    def create_new(self, algorithm, filename_addsub):
+    def create_new(self, algorithm, filename_addsub: Union[str, Path]) -> None:
         op_string = operator_to_string(algorithm.operations)
-        self.title_tspan_elements[self.CONFIG_SPAN].text = (
-            "Operators: {} - Max Num: {} - Seed: {}".format(
-                op_string, algorithm.max_value, algorithm.seed
-            )
+        self.set_config_text(
+            f"Operators: {op_string} - Max Num: {algorithm.max_value} - Seed: {algorithm.seed}"
         )
 
-        exercises = []
-        exercise_nodes = []
-        for operator, values in algorithm.result:
-            exercise = WrittenCalcExerciseBox(operator, values)
-            svg_node = exercise.generateBox()
+        exercise_nodes = [
+            WrittenCalcExerciseBox(operator, values).generateBox()
+            for operator, values in algorithm.result
+        ]
 
-            exercises.append(exercise)
-            exercise_nodes.append(svg_node)
+        self.distribute_exercises(exercise_nodes)
+        self.write(filename_addsub)
 
-        distribute_groups_in_drawing_area(
-            exercise_nodes,
-            self.drawing_area,
-            self.drawing_area_group,
-        )
-
-        self.svg.write(filename_addsub)
-
-    def _set_text(self, element, text):
+    def _set_text(self, element, text: str) -> None:
         element[0].text = text

@@ -1,6 +1,4 @@
-import copy
-
-import lxml.etree as ET
+from svg.svg_handler import NAMESPACE_MAP, SvgElement
 
 # Cell geometry constants (sourced from original Inkscape template)
 _CELL_SIZE = 5.8861966        # width and height of the grid square
@@ -10,19 +8,18 @@ _TEXT_X = _CELL_SIZE / 2     # centred horizontally (text-anchor: middle)
 _TEXT_Y = 4.7672572           # baseline position that centres text vertically in the cell
 
 # Pre-built prototype elements — constructed once at module load, deep-copied per cell (Q25)
-_PROTO_GROUP: ET.Element
-_PROTO_TEXT: ET.Element
-_PROTO_TSPAN: ET.Element
-_PROTO_RECT: ET.Element
+_PROTO_GROUP: SvgElement
+_PROTO_TEXT: SvgElement
+_PROTO_TSPAN: SvgElement
+_PROTO_RECT: SvgElement
 
 
 def _build_prototypes():
     global _PROTO_GROUP, _PROTO_TEXT, _PROTO_TSPAN, _PROTO_RECT
 
-    _PROTO_GROUP = ET.Element("g", transform="translate(0.0,0.0)")
+    _PROTO_GROUP = SvgElement("g", attrib={"transform": "translate(0.0,0.0)"})
 
-    _PROTO_TEXT = ET.SubElement(
-        _PROTO_GROUP,
+    _PROTO_TEXT = _PROTO_GROUP.create_child(
         "text",
         attrib={
             "x": str(_TEXT_X),
@@ -38,8 +35,7 @@ def _build_prototypes():
         },
     )
 
-    _PROTO_TSPAN = ET.SubElement(
-        _PROTO_TEXT,
+    _PROTO_TSPAN = _PROTO_TEXT.create_child(
         "tspan",
         attrib={
             "x": str(_TEXT_X),
@@ -51,11 +47,10 @@ def _build_prototypes():
                 f"font-family:Helvetica;stroke-width:0.264583"
             ),
         },
+        text="",
     )
-    _PROTO_TSPAN.text = ""
 
-    _PROTO_RECT = ET.SubElement(
-        _PROTO_GROUP,
+    _PROTO_RECT = _PROTO_GROUP.create_child(
         "rect",
         attrib={
             "id": "rect_template",
@@ -76,14 +71,7 @@ _build_prototypes()
 
 
 class NumericalPaperCell:
-    # Keep class-level maps for external callers that reference these
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
+    NAMESPACE_MAP = NAMESPACE_MAP
 
     OPERATOR_DETECTION = ["+", "-", "x", "*", "/", "×", "÷"]
     MULTIPLICATION_DETECTION = ["x", "*", "×"]
@@ -92,18 +80,14 @@ class NumericalPaperCell:
 
     def __init__(self, value=None):
         # Deep-copy the prototype tree instead of re-parsing XML (Q25)
-        self.group = copy.deepcopy(_PROTO_GROUP)
+        self.group = _PROTO_GROUP.clone()
 
-        texts = self.group.findall(".//text")
-        self.text = texts[0] if texts else None
+        self.text = self.group.find_first("text")
+        self.tspan = self.group.find_first("tspan")
+        self.rect = self.group.find_first("rect")
 
-        tspans = self.group.findall(".//tspan")
-        self.tspan = tspans[0] if tspans else None
-
-        rects = self.group.findall(".//rect")
-        self.rect = rects[0] if rects else None
-
-        self.tspan.text = str(value) if value else ""
+        if self.tspan is not None:
+            self.tspan.text = str(value) if value else ""
         if value in self.OPERATOR_DETECTION:
             self._handle_operators(value)
 
@@ -118,6 +102,7 @@ class NumericalPaperCell:
         # +, -, and the unicode variants are already correct as-is
 
     def _remove_text(self):
-        self.group.remove(self.text)
-        self.text = None
-        self.tspan = None
+        if self.text is not None:
+            self.group.remove(self.text)
+            self.text = None
+            self.tspan = None

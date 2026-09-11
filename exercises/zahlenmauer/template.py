@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Optional
-
-import lxml.etree as ET
+from typing import Optional, Union
 
 from exercises.zahlenmauer.algorithm import ZahlenmauerAlgorithm, ZahlenmauerPuzzle
-from svg.svg_groups import distribute_groups_in_drawing_area
+from svg.canvas_template import CanvasExerciseTemplate
+from svg.svg_handler import SvgElement
 
 __all__ = ["ZahlenmauerTemplate"]
 
@@ -48,17 +47,19 @@ def _get_brick_geometry(base_size: int) -> tuple[float, float]:
     return W, H
 
 
-class ZahlenmauerTemplate:
+class ZahlenmauerTemplate(CanvasExerciseTemplate):
     """Renders Zahlenmauer (Addition Pyramid) puzzles as SVG sheets."""
 
-    def __init__(self, template_path: Optional[str | Path] = None):
-        self._svg_path = template_path or Path(__file__).parent / "drawing.svg"
+    _DEFAULT_TEMPLATE = Path(__file__).parent / "drawing.svg"
+
+    def __init__(self, template_path: Optional[Union[str, Path]] = None):
+        super().__init__(template_path or self._DEFAULT_TEMPLATE)
 
     def create_sheets(
         self,
         algorithm: ZahlenmauerAlgorithm,
-        student_path: str,
-        solution_path: Optional[str] = None,
+        student_path: Union[str, Path],
+        solution_path: Optional[Union[str, Path]] = None,
     ) -> None:
         """
         Renders puzzles into one or two SVG files (student + optional solution).
@@ -69,66 +70,38 @@ class ZahlenmauerTemplate:
         """
         puzzles = algorithm.puzzles if algorithm.puzzles else algorithm.build()
 
-        self._render_canvas(puzzles, is_solution=False).write(str(student_path))
-        if solution_path:
-            self._render_canvas(puzzles, is_solution=True).write(str(solution_path))
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _render_canvas(self, puzzles: list[ZahlenmauerPuzzle], is_solution: bool):
-        """Build a complete SVG document for the given set of puzzles."""
-        svg_xml = ET.parse(str(self._svg_path))
-        svg_root = svg_xml.getroot()
-
-        nsmap = {"svg": "http://www.w3.org/2000/svg"}
-
-        def _find_by_id(elem_id: str):
-            results = svg_root.findall(f".//*[@id='{elem_id}']")
-            return results[0] if results else None
-
-        # Optionally update page title for solution sheet
-        title_group = _find_by_id("Title")
-        if title_group is not None and is_solution:
-            tspans = title_group.findall(".//svg:tspan", nsmap)
-            if tspans:
-                tspans[0].text = "Zahlenmauer — Lösung"
-
-        # Locate drawing area
-        drawing_area_node = _find_by_id("drawingArea")
-        drawing_area_rect = None
-        if drawing_area_node is not None:
-            rects = drawing_area_node.findall("svg:rect", nsmap)
-            drawing_area_rect = rects[0] if rects else None
-
-        # Build pyramid groups
-        pyramid_groups = [
-            self._render_pyramid(puzzle, idx + 1, is_solution)
-            for idx, puzzle in enumerate(puzzles)
+        # 1. Render student sheet
+        student_canvas = self.clone()
+        student_pyramids = [
+            self._render_pyramid(p, idx + 1, is_solution=False)
+            for idx, p in enumerate(puzzles)
         ]
+        student_canvas.distribute_exercises(student_pyramids)
+        student_canvas.write(student_path)
 
-        # Distribute groups across the drawing area
-        if drawing_area_rect is not None and drawing_area_node is not None:
-            distribute_groups_in_drawing_area(
-                pyramid_groups, drawing_area_rect, drawing_area_node
-            )
-
-        return svg_xml
+        # 2. Render solution sheet if requested
+        if solution_path:
+            solution_canvas = self.clone()
+            solution_canvas.set_title("Zahlenmauer — Lösung")
+            solution_pyramids = [
+                self._render_pyramid(p, idx + 1, is_solution=True)
+                for idx, p in enumerate(puzzles)
+            ]
+            solution_canvas.distribute_exercises(solution_pyramids)
+            solution_canvas.write(solution_path)
 
     def _render_pyramid(
         self, puzzle: ZahlenmauerPuzzle, index: int, is_solution: bool
-    ) -> ET.Element:
-        """Build a single pyramid <g> element."""
+    ) -> SvgElement:
+        """Build a single pyramid <g> element using SvgElement."""
         B = puzzle.base_size
         W, H = _get_brick_geometry(B)
         font_size = round(H * 0.48, 1)
 
-        group = ET.Element("g", id=f"pyramid_{index}", transform="translate(0,0)")
+        group = SvgElement("g", attrib={"id": f"pyramid_{index}", "transform": "translate(0,0)"})
 
         # Small index label above the pyramid
-        lbl = ET.SubElement(
-            group,
+        group.create_child(
             "text",
             attrib={
                 "x": "0",
@@ -138,8 +111,8 @@ class ZahlenmauerTemplate:
                     f"fill:{LABEL_COLOR};font-weight:bold;"
                 ),
             },
+            text=f"#{index}",
         )
-        lbl.text = f"#{index}"
 
         # Draw rows from bottom (r=0) to apex (r=B-1)
         for r in range(B):
@@ -165,8 +138,7 @@ class ZahlenmauerTemplate:
                     display = str(masked_val) if is_given else ""
 
                 # Brick rectangle
-                ET.SubElement(
-                    group,
+                group.create_child(
                     "rect",
                     attrib={
                         "x": f"{bx:.2f}",
@@ -186,8 +158,7 @@ class ZahlenmauerTemplate:
                 if display:
                     ch = len(display)
                     fs = font_size if ch <= 2 else font_size * 0.82
-                    ET.SubElement(
-                        group,
+                    group.create_child(
                         "text",
                         attrib={
                             "x": f"{bx + W / 2.0:.2f}",
@@ -199,6 +170,7 @@ class ZahlenmauerTemplate:
                                 f"font-weight:bold;fill:{text_color};"
                             ),
                         },
-                    ).text = display
+                        text=display,
+                    )
 
         return group

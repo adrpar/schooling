@@ -92,10 +92,11 @@ cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 
 | File | What it does |
 |------|-------------|
-| `svg_handler.py` | `NAMESPACE_MAP` — single canonical SVG namespace mapping. `SVGFile` — thin wrapper over `lxml.etree` for loading/writing SVG and querying elements. `SvgNode` — same but for in-memory sub-trees. `render_svg_to_pdf()` — calls Inkscape via `inkex.command` with auto-discovery on macOS/Linux. |
+| `svg_handler.py` | `NAMESPACE_MAP` — single canonical SVG namespace mapping. Completely encapsulates `lxml.etree`. `SvgElement` — clean Pythonic wrapper around SVG elements with DOM manipulation, builder methods (`create_child`), and XPath querying. `SvgDocument` — encapsulates SVG document loading, parsing, cloning, and writing. `SVGFile` & `SvgNode` — legacy adapters. `render_svg_to_pdf()` — calls Inkscape via `inkex.command` with auto-discovery on macOS/Linux. |
+| `canvas_template.py` | `CanvasExerciseTemplate` — reusable base class for layout-driven exercises (`AddSub`, `Zahlenmauer`). Handles base canvas loading, Title/Config text updates, cloning, and packing exercise nodes into `drawingArea`. |
 | `svg_groups.py` | `calculate_group_dimensions()` — recursive bounding-box calculation from transforms, supporting `<rect>`, `<line>`, `<circle>`, `<ellipse>`. `distribute_groups_in_drawing_area()` — row-based layout engine with justified spacing, cached bboxes, and overflow warnings. |
-| `number_paper/paper_cell.py` | `NumericalPaperCell` — grid cell built from programmatic prototypes (`lxml.etree`) with `text-anchor: middle` auto-centering. |
-| `number_paper/written_calc_exercise_box.py` | Full column-calculation box assembled from cells and separator lines. Uses `Operator` from `core.operators` and `NAMESPACE_MAP` from `svg_handler`. |
+| `number_paper/paper_cell.py` | `NumericalPaperCell` — grid cell built from programmatic prototypes (`SvgElement`) with `text-anchor: middle` auto-centering. |
+| `number_paper/written_calc_exercise_box.py` | Full column-calculation box assembled from cells and separator lines using `SvgElement`. Uses `Operator` from `core.operators` and `NAMESPACE_MAP` from `svg_handler`. |
 
 ---
 

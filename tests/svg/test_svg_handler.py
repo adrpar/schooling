@@ -1,6 +1,6 @@
 import unittest
 import lxml.etree as ET
-from svg.svg_handler import SVGFile, SvgNode
+from svg.svg_handler import SVGFile, SvgNode, SvgElement, SvgDocument
 
 
 class TestSVGFile(unittest.TestCase):
@@ -86,5 +86,43 @@ class TestSvgNode(unittest.TestCase):
         self.assertEqual(elements["test_tspan"].text, "World")
 
 
+class TestSvgElementAndDocument(unittest.TestCase):
+    def test_element_builder_and_properties(self):
+        elem = SvgElement("g", attrib={"id": "main_group", "transform": "translate(10,20)"})
+        self.assertEqual(elem.tag, "g")
+        self.assertEqual(elem.id, "main_group")
+        self.assertEqual(elem.attrib["transform"], "translate(10,20)")
+
+        child = elem.create_child("rect", attrib={"x": "5", "y": "5", "width": "50", "height": "20"})
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(child.tag, "rect")
+        self.assertEqual(child.get("width"), "50")
+
+        text = elem.create_child("text", text="Sample")
+        self.assertEqual(text.text, "Sample")
+        text.text = "Updated"
+        self.assertEqual(text.text, "Updated")
+
+    def test_clone_element(self):
+        parent = SvgElement("g", attrib={"id": "original"})
+        parent.create_child("circle", attrib={"r": "10"})
+        cloned = parent.clone()
+        cloned.id = "cloned"
+        self.assertEqual(parent.id, "original")
+        self.assertEqual(cloned.id, "cloned")
+        self.assertEqual(len(cloned), 1)
+
+    def test_document_from_string_and_search(self):
+        svg_str = '<svg xmlns="http://www.w3.org/2000/svg"><g id="grp"><rect id="r1" width="10"/></g></svg>'
+        doc = SvgDocument.from_string(svg_str)
+        rect = doc.find_by_id("r1")
+        self.assertIsNotNone(rect)
+        self.assertEqual(rect.attrib["width"], "10")
+
+        rects = doc.find_all("rect")
+        self.assertEqual(len(rects), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
+
