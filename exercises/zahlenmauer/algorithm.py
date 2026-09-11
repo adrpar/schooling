@@ -106,6 +106,19 @@ class ZahlenmauerSolver:
         return is_solved, history
 
 
+def get_optimal_pyramid_count(base_size: int) -> int:
+    """
+    Returns the optimal number of pyramids that cleanly fit an A4 page
+    for the given base size without overflow or truncation.
+    """
+    if base_size <= 6:
+        return 6  # 2 columns x 3 rows
+    elif base_size in (7, 8):
+        return 2  # 1 column x 2 rows
+    else:
+        return 1  # 1 column x 1 row (large pyramid)
+
+
 class ZahlenmauerAlgorithm:
     def __init__(
         self,
@@ -113,7 +126,7 @@ class ZahlenmauerAlgorithm:
         difficulty: Difficulty = Difficulty.MEDIUM,
         min_value: int = 1,
         max_value: int = 100,
-        num_pyramids: int = 6,
+        num_pyramids: Optional[int] = None,
         rand_seed: Optional[int] = None,
     ):
         if base_size < 3 or base_size > 10:
@@ -130,7 +143,11 @@ class ZahlenmauerAlgorithm:
         self.difficulty = difficulty
         self.min_value = min_value
         self.max_value = max_value
-        self.num_pyramids = num_pyramids
+        self.num_pyramids = (
+            num_pyramids
+            if num_pyramids is not None
+            else get_optimal_pyramid_count(base_size)
+        )
         self.seed = rand_seed
         self.rng = Random(rand_seed)
         self.puzzles: list[ZahlenmauerPuzzle] = []

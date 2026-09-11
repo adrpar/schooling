@@ -178,10 +178,13 @@ def distribute_groups_in_drawing_area(
 
         # If exceeds drawing height, stop placing
         if current_y + g_height > drawing_box_origin_y + drawing_box_height:
-            logger.warning(
-                "distribute_groups_in_drawing_area: %d exercise(s) did not fit and were dropped.",
-                len(group_list) - len(row_elements) - sum(1 for _ in drawing_area_group),
-            )
+            placed_count = sum(1 for _ in drawing_area_group) + len(row_elements)
+            dropped = len(group_list) - placed_count
+            if dropped > 0:
+                logger.warning(
+                    "distribute_groups_in_drawing_area: %d exercise(s) did not fit and were dropped.",
+                    dropped,
+                )
             break
 
         row_elements.append(exercise)

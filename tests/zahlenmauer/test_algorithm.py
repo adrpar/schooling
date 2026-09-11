@@ -121,6 +121,21 @@ class TestZahlenmauerAlgorithm(unittest.TestCase):
         self.assertEqual(p1[0].masked_wall, p2[0].masked_wall)
         self.assertNotEqual(p1[0].full_wall, p3[0].full_wall)
 
+    def test_optimal_pyramid_count(self):
+        from exercises.zahlenmauer.algorithm import get_optimal_pyramid_count
+        self.assertEqual(get_optimal_pyramid_count(3), 6)
+        self.assertEqual(get_optimal_pyramid_count(6), 6)
+        self.assertEqual(get_optimal_pyramid_count(7), 2)
+        self.assertEqual(get_optimal_pyramid_count(8), 2)
+        self.assertEqual(get_optimal_pyramid_count(9), 1)
+        self.assertEqual(get_optimal_pyramid_count(10), 1)
+
+        # Default initialization uses optimal count
+        alg_4 = ZahlenmauerAlgorithm(base_size=4)
+        self.assertEqual(alg_4.num_pyramids, 6)
+        alg_7 = ZahlenmauerAlgorithm(base_size=7)
+        self.assertEqual(alg_7.num_pyramids, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

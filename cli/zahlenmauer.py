@@ -59,8 +59,11 @@ from svg.svg_handler import render_svg_to_pdf
 @click.option(
     "--num-pyramids",
     type=int,
-    default=6,
-    help="Number of pyramids per sheet.",
+    default=None,
+    help=(
+        "Number of pyramids per sheet. "
+        "Defaults to optimal count for base-size (6 for <=6, 2 for 7-8, 1 for >=9)."
+    ),
 )
 @click.option(
     "--seed",
@@ -76,7 +79,7 @@ def zahlenmauer(
     difficulty: str,
     max_value: Optional[int],
     min_value: int,
-    num_pyramids: int,
+    num_pyramids: Optional[int],
     seed: Optional[int],
 ):
     """Generate Zahlenmauer (Addition Pyramid) exercise sheets."""

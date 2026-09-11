@@ -24,11 +24,17 @@ from svg.svg_handler import render_svg_to_pdf
     default="both",
     help="Output format: SVG, PDF, or both.",
 )
-def addsub(output, format):
+@click.option(
+    "--num-exercises",
+    type=int,
+    default=20,
+    help="Number of exercises per sheet (default: 20, cleanly fills A4 page).",
+)
+def addsub(output, format, num_exercises):
     """Generate add/sub exercises SVG."""
     template = AddSubTemplate()
     algorithm = AddSubAlgorithm(
-        OPERATORS, MIN_VALUE, MAX_VALUE, NUM_EXERCISES, NUM_ROWS_PER_EXERCISE, SEED
+        OPERATORS, MIN_VALUE, MAX_VALUE, num_exercises, NUM_ROWS_PER_EXERCISE, SEED
     )
     algorithm.build_addsub()
 
