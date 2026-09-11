@@ -31,9 +31,9 @@ from svg.svg_handler import render_svg_to_pdf
 )
 @click.option(
     "--base-size",
-    type=click.IntRange(min=3, max=6),
+    type=click.IntRange(min=3, max=10),
     default=4,
-    help="Number of bricks at the bottom row (3 to 6).",
+    help="Number of bricks at the bottom row (3 to 10).",
 )
 @click.option(
     "--difficulty",
@@ -44,8 +44,11 @@ from svg.svg_handler import render_svg_to_pdf
 @click.option(
     "--max-value",
     type=int,
-    default=100,
-    help="Maximum value on the apex brick.",
+    default=None,
+    help=(
+        "Maximum value on the apex brick. "
+        "Defaults to max(100, 2^(base_size-1) * 10) so larger pyramids work automatically."
+    ),
 )
 @click.option(
     "--min-value",
@@ -71,12 +74,14 @@ def zahlenmauer(
     format: str,
     base_size: int,
     difficulty: str,
-    max_value: int,
+    max_value: Optional[int],
     min_value: int,
     num_pyramids: int,
     seed: Optional[int],
 ):
     """Generate Zahlenmauer (Addition Pyramid) exercise sheets."""
+    if max_value is None:
+        max_value = max(100, (2 ** (base_size - 1)) * 10)
     diff_enum = Difficulty.from_string(difficulty)
 
     algorithm = ZahlenmauerAlgorithm(

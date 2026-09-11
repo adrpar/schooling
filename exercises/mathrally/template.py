@@ -1,16 +1,9 @@
-from pathlib import Path
-from typing import Any, Optional
-
 from core.operators import Operator
 from exercises.utils import operator_to_string
-from svg.template import Template, Element, validate_template
-
-_TEMPLATE = Path(__file__).parent / "template" / "mathrally.svg"
+from svg.svg_handler import SVGFile
 
 
 class RallyTemplate:
-    """Generic SVG template for math rally exercises using Template class."""
-    
     VALUE_ID_PREFIX = "value"
     OPERATOR_TEXT_ID_PREFIX = "operatorText"
     TITLE_ID = "Title"
@@ -18,34 +11,74 @@ class RallyTemplate:
     TITLE_SPAN = "TitleSpan"
     CONFIG_SPAN = "ConfigSpan"
 
-    def __init__(self, file_name: Optional[str] = None):
-        self.template = Template(file_name or str(_TEMPLATE))
-        self.title_element = self.template.get_element(self.TITLE_ID)
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.svg = SVGFile(file_name)
 
-        text_elements = self.template.find_all_by_tag("text", self.title_element)
-        self.title_tspan_elements = {
-            element.get_attribute("id"): element for element in text_elements
+        text_elements = self.svg.find_all_elements_by_attributes("text", "id")
+
+        self.value_elements = {
+            key: element
+            for key, element in text_elements.items()
+            if self.VALUE_ID_PREFIX in key
         }
+        self.operator_elements = {
+            key: element
+            for key, element in text_elements.items()
+            if self.OPERATOR_TEXT_ID_PREFIX in key
+        }
+        self.title_element = text_elements[self.TITLE_ID]
 
+        title_tspan_elements = self.svg.all_spans_in_text(self.title_element)
+        self.title_tspan_elements = {
+            element.attrib["id"]: element for element in title_tspan_elements
+        }
         self._validate_assumptions()
 
-        self.num_operators = len(self.title_tspan_elements) - 1
-        self.num_value_elements = len(self.title_tspan_elements)
+        self.num_operators = len(self.operator_elements.keys())
+        self.num_value_elements = len(self.value_elements.keys())
 
     def _validate_assumptions(self):
-        validate_template(self.template)
-        raise NotImplementedError("Validation logic to be implemented")
+        operator_ids = [int(key.split(".")[1]) for key in self.operator_elements.keys()]
+        operator_ids = sorted(operator_ids)
+        if not all([i == id for i, id in enumerate(operator_ids)]):
+            print(operator_ids)
+            raise ValueError("Operator ids are not consecutive")
 
-    def create_new_rally(self, algorithm_results, filename_rally: str, filename_solution: str):
-        solution_copy = RallyTemplate(str(_TEMPLATE))
-        rally_copy = RallyTemplate(str(_TEMPLATE))
+        value_ids = [int(key.split(".")[1]) for key in self.value_elements.keys()]
+        value_ids = sorted(value_ids)
+        if not all([i == id for i, id in enumerate(value_ids)]):
+            print(value_ids)
+            raise ValueError("Value ids are not consecutive")
+
+        num_operators = len(self.operator_elements.keys())
+        num_value_elements = len(self.value_elements.keys())
+
+        if (num_value_elements - num_operators) != 1:
+            print(num_value_elements, num_operators)
+            raise ValueError(
+                "Template has not one more value field than operations fields"
+            )
+
+        if not all(
+            [
+                element in ["TitleSpan", "ConfigSpan"]
+                for element in self.title_tspan_elements.keys()
+            ]
+        ):
+            print(self.title_tspan_elements)
+            raise ValueError("Title does not contain expected tspans")
+
+    def create_new_rally(self, algorithm_results, filename_rally, filename_solution):
+        solution_copy = RallyTemplate(self.file_name)
+        rally_copy = RallyTemplate(self.file_name)
 
         op_string = operator_to_string(algorithm_results.operations)
         config_text = "Operators: {} - Max Num: {} - Seed: {}".format(
             op_string, algorithm_results.max_value, algorithm_results.seed
         )
-        solution_copy.title_tspan_elements[self.CONFIG_SPAN].set_text(config_text)
-        rally_copy.title_tspan_elements[self.CONFIG_SPAN].set_text(config_text)
+        solution_copy.title_tspan_elements[self.CONFIG_SPAN].text = config_text
+        rally_copy.title_tspan_elements[self.CONFIG_SPAN].text = config_text
 
         for i, element in enumerate(algorithm_results.result):
             if i == 0:
@@ -73,8 +106,8 @@ class RallyTemplate:
                     operator_text,
                 )
 
-        solution_copy.template.write(filename_solution)
-        rally_copy.template.write(filename_rally)
+        solution_copy.svg.write(filename_solution)
+        rally_copy.svg.write(filename_rally)
 
-    def _set_text(self, element: Element, text: str):
-        element.set_text(text)
+    def _set_text(self, element, text):
+        element[0].text = text

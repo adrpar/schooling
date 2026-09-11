@@ -116,8 +116,8 @@ class ZahlenmauerAlgorithm:
         num_pyramids: int = 6,
         rand_seed: Optional[int] = None,
     ):
-        if base_size < 3 or base_size > 6:
-            raise ValueError(f"base_size must be between 3 and 6 (got {base_size})")
+        if base_size < 3 or base_size > 10:
+            raise ValueError(f"base_size must be between 3 and 10 (got {base_size})")
 
         min_apex = (2 ** (base_size - 1)) * min_value
         if min_apex > max_value:

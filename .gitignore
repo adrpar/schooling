@@ -20,3 +20,4 @@ output.png
 # Keep SVG templates in img/ and exercises/
 !img/*.svg
 !exercises/**/*.svg
+.aider*

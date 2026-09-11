@@ -19,7 +19,7 @@ class TestZahlenmauerAlgorithm(unittest.TestCase):
         with self.assertRaises(ValueError):
             ZahlenmauerAlgorithm(base_size=2)
         with self.assertRaises(ValueError):
-            ZahlenmauerAlgorithm(base_size=7)
+            ZahlenmauerAlgorithm(base_size=11)
 
     def test_max_value_validation(self):
         # Base size 4 has minimum apex of 2^3 * 1 = 8

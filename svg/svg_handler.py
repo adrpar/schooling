@@ -17,25 +17,38 @@ NAMESPACE_MAP = {
 
 class Template:
     """Generic SVG template that can be loaded from a file."""
-    
+
+    NAMESPACE_MAP = NAMESPACE_MAP
+
     def __init__(self, path: Optional[str] = None):
         self.template_path = Path(path) if path else None
         if self.template_path:
             self.svg_xml = ET.parse(self.template_path)
             self.svg = self.svg_xml.getroot()
 
-    def get_element(self, element_id: str):
-        """Get element by ID."""
-        elements = self.find_all_by_tag("element", self.NAMESPACE_MAP)
-        return next((e for e in elements if e.get_attribute("id") == element_id), None)
-    
-    def find_all_by_tag(self, tag: str, namespaces: dict = None):
-        """Find all elements with given tag."""
-        if namespaces is None:
-            namespaces = self.NAMESPACE_MAP
-        return self.svg.findall(".//" + tag, namespaces=namespaces)
-    
-    def write(self, path: str):
+    def get_element_by_id(self, element_id: str) -> Optional[ET.Element]:
+        """Get first element matching the given id attribute."""
+        results = self.svg.findall(f".//*[@id='{element_id}']")
+        return results[0] if results else None
+
+    def find_all_by_tag(self, tag: str, parent: Optional[ET.Element] = None) -> list[ET.Element]:
+        """Find all descendant elements with the given local tag name."""
+        root = parent if parent is not None else self.svg
+        return root.findall(".//" + tag, namespaces=self.NAMESPACE_MAP)
+
+    def find_by_tag_and_attribute(
+        self,
+        parent: ET.Element,
+        tag: str,
+        attribute: str,
+    ) -> Optional[ET.Element]:
+        """Return first child element with matching tag that has the given attribute."""
+        for elem in parent.findall(".//" + tag, namespaces=self.NAMESPACE_MAP):
+            if attribute in elem.attrib:
+                return elem
+        return None
+
+    def write(self, path: str) -> None:
         """Write template to file."""
         self.svg_xml.write(path)
 
@@ -64,7 +77,11 @@ class SVGFile:
 
     def find_all_elements_by_attributes_in_node(self, node, tag, attribute):
         elements = self.find_all_in_node(node, tag)
-        return {element.get_attribute(attribute): element for element in elements}
+        return {
+            element.attrib[attribute]: element
+            for element in elements
+            if attribute in element.attrib
+        }
 
     def all_spans_in_text(self, text_node):
         return text_node.findall(".//tspan", namespaces=self.NAMESPACE_MAP)
@@ -84,7 +101,11 @@ class SvgNode:
 
     def find_all_elements_by_attributes_in_node(self, tag, attribute):
         elements = self.find_all_in_node(tag)
-        return {element.get_attribute(attribute): element for element in elements}
+        return {
+            element.attrib[attribute]: element
+            for element in elements
+            if attribute in element.attrib
+        }
 
 
 def _ensure_inkscape():
