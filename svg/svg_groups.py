@@ -91,33 +91,67 @@ def parse_transform(transform):
     return 0, 0
 
 
-def _flush_row(row_elements, row_bboxes, current_y, drawing_box_origin_x,
-               drawing_box_width, drawing_area_group):
+def _flush_row(
+    row_elements,
+    row_bboxes,
+    current_y,
+    drawing_box_origin_x,
+    drawing_box_width,
+    drawing_area_group,
+    center_single: bool = True,
+    max_gap: float = None,
+):
     """
-    Justify-spaces and appends a completed row of elements to the drawing area group. (Q26)
+    Spaces and appends a completed row of elements to the drawing area group.
+    - Single elements are centered horizontally by default.
+    - Multi-element rows are justified, with an optional max_gap cap to prevent extreme voids.
     """
     total_width = sum(w for _, w, _ in row_bboxes)
     space_remaining = drawing_box_width - total_width
-    padding = space_remaining / (len(row_elements) - 1) if len(row_elements) > 1 else 0
+    n = len(row_elements)
 
-    x_offset = drawing_box_origin_x
-    for elem, elem_width, _ in zip(row_elements, row_bboxes, row_bboxes):
+    if n == 1:
+        x_offset = (
+            drawing_box_origin_x + space_remaining / 2.0
+            if center_single
+            else drawing_box_origin_x
+        )
+        padding = 0.0
+    else:
+        natural_gap = space_remaining / (n - 1)
+        if max_gap is not None and natural_gap > max_gap:
+            padding = max_gap
+            cluster_width = total_width + (n - 1) * padding
+            x_offset = drawing_box_origin_x + (drawing_box_width - cluster_width) / 2.0
+        else:
+            padding = natural_gap
+            x_offset = drawing_box_origin_x
+
+    for elem, (_, w, _) in zip(row_elements, row_bboxes):
         elem.attrib["transform"] = f"translate({x_offset},{current_y})"
-        x_offset += elem_width[1] + padding
+        x_offset += w + padding
         drawing_area_group.append(elem)
 
 
-def distribute_groups_in_drawing_area(group_list, drawing_area, drawing_area_group):
+def distribute_groups_in_drawing_area(
+    group_list,
+    drawing_area,
+    drawing_area_group,
+    row_spacing: float = 10.0,
+    center_single: bool = True,
+    max_gap: float = None,
+    center_vertical: bool = False,
+):
     drawing_box_origin_x = float(drawing_area.attrib["x"])
     drawing_box_origin_y = float(drawing_area.attrib["y"])
     drawing_box_width = float(drawing_area.attrib["width"])
     drawing_box_height = float(drawing_area.attrib["height"])
 
-    current_x, current_y = drawing_box_origin_x, drawing_box_origin_y
-    row_spacing = 10
-    row_height = 0
+    current_x = drawing_box_origin_x
+    current_y = drawing_box_origin_y
+    row_height = 0.0
     row_elements = []
-    row_bboxes = []  # list of (element, width, height) — compute once per element (Q26)
+    row_bboxes = []  # list of (element, width, height)
 
     for exercise in group_list:
         dims = calculate_group_dimensions(exercise)
@@ -125,12 +159,20 @@ def distribute_groups_in_drawing_area(group_list, drawing_area, drawing_area_gro
         g_height = float(dims["height"])
 
         # Move to next row if width exceeds limit
-        if current_x + g_width > drawing_box_origin_x + drawing_box_width:
-            _flush_row(row_elements, row_bboxes, current_y,
-                       drawing_box_origin_x, drawing_box_width, drawing_area_group)
+        if current_x + g_width > drawing_box_origin_x + drawing_box_width and row_elements:
+            _flush_row(
+                row_elements,
+                row_bboxes,
+                current_y,
+                drawing_box_origin_x,
+                drawing_box_width,
+                drawing_area_group,
+                center_single=center_single,
+                max_gap=max_gap,
+            )
             current_x = drawing_box_origin_x
             current_y += row_height + row_spacing
-            row_height = 0
+            row_height = 0.0
             row_elements = []
             row_bboxes = []
 
@@ -149,5 +191,13 @@ def distribute_groups_in_drawing_area(group_list, drawing_area, drawing_area_gro
 
     # Final row
     if row_elements:
-        _flush_row(row_elements, row_bboxes, current_y,
-                   drawing_box_origin_x, drawing_box_width, drawing_area_group)
+        _flush_row(
+            row_elements,
+            row_bboxes,
+            current_y,
+            drawing_box_origin_x,
+            drawing_box_width,
+            drawing_area_group,
+            center_single=center_single,
+            max_gap=max_gap,
+        )
