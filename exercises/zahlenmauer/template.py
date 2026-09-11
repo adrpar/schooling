@@ -3,22 +3,21 @@ from typing import Optional, Union
 
 from exercises.zahlenmauer.algorithm import ZahlenmauerAlgorithm, ZahlenmauerPuzzle
 from svg.canvas_template import CanvasExerciseTemplate
+from svg.styles import (
+    BLANK_FILL,
+    BORDER_COLOR,
+    BORDER_WIDTH,
+    CLUE_FILL,
+    CORNER_RADIUS,
+    FONT_FAMILY,
+    GIVEN_TEXT_COLOR,
+    LABEL_COLOR,
+    SOLUTION_FILL,
+    SOLUTION_TEXT_COLOR,
+)
 from svg.svg_handler import SvgElement
 
 __all__ = ["ZahlenmauerTemplate"]
-
-# Styling constants
-BORDER_COLOR = "#2d3748"
-BORDER_WIDTH = "0.35"
-CORNER_RADIUS = "1.2"
-
-GIVEN_TEXT_COLOR = "#1a202c"
-SOLUTION_TEXT_COLOR = "#2b6cb0"
-LABEL_COLOR = "#718096"
-
-CLUE_FILL = "#edf2f7"     # Subtle soft gray for given numbers
-BLANK_FILL = "#ffffff"    # Pure white for student writing space
-SOLUTION_FILL = "#ebf8ff" # Soft blue for solved answers
 
 # Drawing area dimensions (A4 minus margins, in viewBox user units = mm)
 _DRAWING_WIDTH = 180.0
