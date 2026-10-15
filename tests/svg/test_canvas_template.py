@@ -52,10 +52,49 @@ class TestCanvasExerciseTemplate(unittest.TestCase):
             boxes.append(g)
 
         self.template.distribute_exercises(boxes)
-        # Check that children were appended to drawingArea
         children = self.template.drawing_area_group.find_all("g")
         self.assertEqual(len(children), 3)
+
+    def test_set_header(self):
+        self.template.set_header("Awesome Title", "Awesome Subtitle")
+        self.assertEqual(self.template.title_tspans["TitleSpan"].text, "Awesome Title")
+        self.assertEqual(self.template.title_tspans["ConfigSpan"].text, "Awesome Subtitle")
+        self.assertIn("font-size:7.5px", self.template.title_tspans["TitleSpan"].attrib["style"])
+        self.assertIn("font-size:3.6px", self.template.title_tspans["ConfigSpan"].attrib["style"])
+
+    def test_set_footer_visibility_and_text(self):
+        self.template.set_footer("Name: Alice    Datum: 2026-10-10", visible=True)
+        self.assertIsNotNone(self.template.footer_element)
+        self.assertEqual(self.template.footer_span.text, "Name: Alice    Datum: 2026-10-10")
+        self.assertIn("font-size:3.5px", self.template.footer_span.attrib["style"])
+
+        # Hide footer
+        self.template.set_footer(visible=False)
+        self.assertIsNone(self.template.footer_element)
+
+    def test_create_exercise_label(self):
+        label = CanvasExerciseTemplate.create_exercise_label(5)
+        self.assertEqual(label.tag, "text")
+        self.assertEqual(label.text, "#5")
+        self.assertIn("font-size:3.2px", label.attrib["style"])
+
+    def test_auto_create_config_span_if_missing(self):
+        minimal_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297">
+          <g id="drawingArea"><rect id="drawingAreaRect" x="0" y="0" width="100" height="100"/></g>
+          <text id="Title"><tspan id="TitleSpan">Only Title</tspan></text>
+        </svg>"""
+        path = "test_minimal.svg"
+        with open(path, "w") as f:
+            f.write(minimal_svg)
+        tmpl = CanvasExerciseTemplate(path)
+        self.assertNotIn("ConfigSpan", tmpl.title_tspans)
+        tmpl.set_config_text("Created Subtitle")
+        self.assertIn("ConfigSpan", tmpl.title_tspans)
+        self.assertEqual(tmpl.title_tspans["ConfigSpan"].text, "Created Subtitle")
+        if os.path.exists(path):
+            os.remove(path)
 
 
 if __name__ == "__main__":
     unittest.main()
+

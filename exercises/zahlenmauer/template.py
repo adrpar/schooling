@@ -59,6 +59,7 @@ class ZahlenmauerTemplate(CanvasExerciseTemplate):
         algorithm: ZahlenmauerAlgorithm,
         student_path: Union[str, Path],
         solution_path: Optional[Union[str, Path]] = None,
+        show_numbering: bool = True,
     ) -> None:
         """
         Renders puzzles into one or two SVG files (student + optional solution).
@@ -66,13 +67,21 @@ class ZahlenmauerTemplate(CanvasExerciseTemplate):
         :param algorithm: Algorithm instance with built puzzles.
         :param student_path: Destination path for the student sheet SVG.
         :param solution_path: Optional destination path for the solution sheet SVG.
+        :param show_numbering: Whether to render '#1', '#2', etc. above each pyramid.
         """
         puzzles = algorithm.puzzles if algorithm.puzzles else algorithm.build()
+        config_text = (
+            f"Basis: {algorithm.base_size} Steine — "
+            f"Stufe: {algorithm.difficulty.name.capitalize()} — "
+            f"Seed: {algorithm.seed}"
+        )
 
         # 1. Render student sheet
         student_canvas = self.clone()
+        student_canvas.set_header("Zahlenmauer", config_text)
+        student_canvas.set_footer(visible=True)
         student_pyramids = [
-            self._render_pyramid(p, idx + 1, is_solution=False)
+            self._render_pyramid(p, idx + 1, is_solution=False, show_numbering=show_numbering)
             for idx, p in enumerate(puzzles)
         ]
         student_canvas.distribute_exercises(student_pyramids)
@@ -81,16 +90,21 @@ class ZahlenmauerTemplate(CanvasExerciseTemplate):
         # 2. Render solution sheet if requested
         if solution_path:
             solution_canvas = self.clone()
-            solution_canvas.set_title("Zahlenmauer — Lösung")
+            solution_canvas.set_header("Zahlenmauer — Lösung", config_text)
+            solution_canvas.set_footer(visible=False)
             solution_pyramids = [
-                self._render_pyramid(p, idx + 1, is_solution=True)
+                self._render_pyramid(p, idx + 1, is_solution=True, show_numbering=show_numbering)
                 for idx, p in enumerate(puzzles)
             ]
             solution_canvas.distribute_exercises(solution_pyramids)
             solution_canvas.write(solution_path)
 
     def _render_pyramid(
-        self, puzzle: ZahlenmauerPuzzle, index: int, is_solution: bool
+        self,
+        puzzle: ZahlenmauerPuzzle,
+        index: int,
+        is_solution: bool,
+        show_numbering: bool = True,
     ) -> SvgElement:
         """Build a single pyramid <g> element using SvgElement."""
         B = puzzle.base_size
@@ -100,18 +114,9 @@ class ZahlenmauerTemplate(CanvasExerciseTemplate):
         group = SvgElement("g", attrib={"id": f"pyramid_{index}", "transform": "translate(0,0)"})
 
         # Small index label above the pyramid
-        group.create_child(
-            "text",
-            attrib={
-                "x": "0",
-                "y": "-2.5",
-                "style": (
-                    f"font-size:3.2px;font-family:Arial,Helvetica,sans-serif;"
-                    f"fill:{LABEL_COLOR};font-weight:bold;"
-                ),
-            },
-            text=f"#{index}",
-        )
+        if show_numbering:
+            group.append(CanvasExerciseTemplate.create_exercise_label(index, x=0.0, y=-2.5))
+
 
         # Draw rows from bottom (r=0) to apex (r=B-1)
         for r in range(B):

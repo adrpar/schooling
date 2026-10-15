@@ -14,21 +14,29 @@
          style="fill:none;stroke:none;"
          id="drawingAreaRect"
          width="180"
-         height="240"
+         height="244"
          x="15"
-         y="30" />
+         y="32" />
     </g>
     <text
        xml:space="preserve"
-       style="font-weight:bold;font-size:8px;font-family:Arial, sans-serif;text-anchor:middle;fill:#1a202c;"
+       style="font-weight:bold;font-size:7.5px;font-family:Arial, Helvetica, sans-serif;text-anchor:middle;fill:#1a202c;"
        x="105"
-       y="20"
-       id="Title"><tspan id="TitleSpan">Zahlenmauer</tspan></text>
+       y="16.5"
+       id="Title"><tspan
+         id="TitleSpan"
+         style="font-size:7.5px;font-family:Arial, Helvetica, sans-serif;font-weight:bold;fill:#1a202c;text-anchor:middle;"
+         x="105"
+         y="16.5">Zahlenmauer</tspan><tspan
+         id="ConfigSpan"
+         style="font-size:3.6px;font-family:Arial, Helvetica, sans-serif;font-weight:normal;fill:#718096;text-anchor:middle;"
+         x="105"
+         y="22.5">Basis: 4 - Stufe: Mittel</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:4px;font-family:Arial, sans-serif;text-anchor:start;fill:#718096;"
+       style="font-size:3.5px;font-family:Arial, Helvetica, sans-serif;text-anchor:start;fill:#718096;"
        x="15"
-       y="282"
+       y="284"
        id="Footer"><tspan id="FooterSpan">Name: ______________________    Datum: ____________</tspan></text>
   </g>
 </svg>

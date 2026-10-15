@@ -7,8 +7,8 @@ __all__ = ["operator_to_string"]
 _OPERATOR_SYMBOLS = {
     Operator.ADDITION: "+",
     Operator.SUBTRACTION: "-",
-    Operator.MULTIPLICATION: "*",
-    Operator.DIVISION: "/",
+    Operator.MULTIPLICATION: "·",
+    Operator.DIVISION: ":",
 }
 
 

@@ -20,15 +20,26 @@ class AddSubTemplate(CanvasExerciseTemplate):
         self.svg = self.doc
         self.title_tspan_elements = self.title_tspans
 
-    def create_new(self, algorithm, filename_addsub: Union[str, Path]) -> None:
+    def create_new(
+        self,
+        algorithm,
+        filename_addsub: Union[str, Path],
+        show_numbering: bool = True,
+    ) -> None:
         op_string = operator_to_string(algorithm.operations)
-        self.set_config_text(
-            f"Operators: {op_string} - Max Num: {algorithm.max_value} - Seed: {algorithm.seed}"
+        self.set_header(
+            "Schriftliche Mathe",
+            f"Operators: {op_string} - Max Num: {algorithm.max_value} - Seed: {algorithm.seed}",
         )
+        self.set_footer(visible=True)
 
         exercise_nodes = [
-            WrittenCalcExerciseBox(operator, values).generateBox()
-            for operator, values in algorithm.result
+            WrittenCalcExerciseBox(
+                operator,
+                values,
+                exercise_number=idx + 1 if show_numbering else None,
+            ).generateBox()
+            for idx, (operator, values) in enumerate(algorithm.result)
         ]
 
         self.distribute_exercises(exercise_nodes)

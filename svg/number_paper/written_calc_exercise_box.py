@@ -1,7 +1,10 @@
+from typing import Optional
+
 from svg.number_paper.paper_cell import NumericalPaperCell
 from svg.svg_handler import NAMESPACE_MAP, SvgElement
 
 BOX_STROKE_WIDTH = 0.223193
+
 
 
 class WrittenCalcExerciseBox:
@@ -12,14 +15,27 @@ class WrittenCalcExerciseBox:
     NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR = 1
     NUM_SPACES_BEFORE_OPERATOR = 1
 
-    def __init__(self, operation, values: list[int]):
+    def __init__(
+        self,
+        operation,
+        values: list[int],
+        exercise_number: Optional[int] = None,
+    ):
         self.operation = operation
         self.values = values
+        self.exercise_number = exercise_number
 
-    def generateBox(self) -> SvgElement:
+    def generateBox(self, exercise_number: Optional[int] = None) -> SvgElement:
+        num = exercise_number if exercise_number is not None else self.exercise_number
         return_element = SvgElement(
             "g", attrib={"id": "exerciseBox", "transform": "translate(0.0,0.0)"}
         )
+
+        if num is not None:
+            from svg.canvas_template import CanvasExerciseTemplate
+
+            label = CanvasExerciseTemplate.create_exercise_label(num, x=0.0, y=-2.2)
+            return_element.append(label)
 
         max_value = max(self.values)
         num_boxes = (
@@ -33,6 +49,7 @@ class WrittenCalcExerciseBox:
         self._add_box_matrix(return_element, self.values, num_boxes, num_rows)
 
         return return_element
+
 
     def _add_box_matrix(self, node: SvgElement, values, num_x, num_y):
         number_box = NumericalPaperCell(0)
