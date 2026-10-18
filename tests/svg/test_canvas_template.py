@@ -94,7 +94,59 @@ class TestCanvasExerciseTemplate(unittest.TestCase):
         if os.path.exists(path):
             os.remove(path)
 
+    def test_default_blank_canvas_generation(self):
+        default_tmpl = CanvasExerciseTemplate()
+        self.assertIsNotNone(default_tmpl.drawing_area)
+        self.assertEqual(default_tmpl.drawing_area.attrib["id"], "drawingAreaRect")
+        self.assertIn("TitleSpan", default_tmpl.title_tspans)
+        self.assertIn("ConfigSpan", default_tmpl.title_tspans)
+        self.assertIsNotNone(default_tmpl.footer_element)
+
+        # Ensure header and footer can be styled cleanly on default blank canvas
+        default_tmpl.set_header("Code Canvas", "Auto-generated")
+        self.assertEqual(default_tmpl.title_tspans["TitleSpan"].text, "Code Canvas")
+        self.assertEqual(default_tmpl.title_tspans["ConfigSpan"].text, "Auto-generated")
+
+    def test_generic_helpers(self):
+        from svg.canvas_template import (
+            calc_adaptive_font_size,
+            center_text_in_circle,
+            center_text_in_rect,
+            highlight_solution_box,
+        )
+
+        # 1. Adaptive font sizing
+        self.assertEqual(calc_adaptive_font_size("5"), 6.0)
+        self.assertEqual(calc_adaptive_font_size("42"), 5.5)
+        self.assertEqual(calc_adaptive_font_size("123"), 4.5)
+        self.assertEqual(calc_adaptive_font_size("12345"), 3.8)
+
+        # 2. Text in rect centering
+        text = SvgElement("text", attrib={"transform": "scale(2)"})
+        rect = SvgElement("rect", attrib={"x": "10", "y": "20", "width": "40", "height": "30"})
+        cx, cy = center_text_in_rect(text, rect)
+        self.assertEqual((cx, cy), (30.0, 35.0))
+        self.assertEqual(text.attrib["x"], "30.000000")
+        self.assertEqual(text.attrib["y"], "35.000000")
+        self.assertNotIn("transform", text.attrib)
+
+        # 3. Text in circle centering
+        circle = SvgElement("circle", attrib={"cx": "50", "cy": "60", "r": "10"})
+        cx, cy = center_text_in_circle(text, circle)
+        self.assertEqual((cx, cy), (50.0, 60.0))
+        self.assertEqual(text.attrib["x"], "50.000000")
+        self.assertEqual(text.attrib["y"], "60.000000")
+
+        # 4. Highlight solution box
+        parent = SvgElement("g")
+        parent.append(rect)
+        parent.append(text)
+        highlight_solution_box(rect, text)
+        self.assertIn("fill:#ebf8ff", rect.attrib["style"])
+        self.assertIn("stroke:#2b6cb0", rect.attrib["style"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

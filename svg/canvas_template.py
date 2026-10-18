@@ -2,9 +2,11 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 from svg.styles import (
+    COLOR_SOLUTION,
     COLOR_TEXT_PRIMARY,
     COLOR_TEXT_SECONDARY,
     DEFAULT_FOOTER_TEXT,
+    FILL_SOLUTION,
     FONT_FAMILY,
     FONT_SIZE_LABEL,
     FONT_SIZE_SUBTITLE,
@@ -14,6 +16,8 @@ from svg.styles import (
     HEADER_TITLE_X,
     HEADER_TITLE_Y,
     HEADER_SUBTITLE_Y,
+    PAGE_HEIGHT,
+    PAGE_WIDTH,
     get_footer_style,
     get_label_style,
     get_subtitle_style,
@@ -26,7 +30,7 @@ from svg.svg_handler import SvgDocument, SvgElement
 class CanvasExerciseTemplate:
     """
     Reusable base class for canvas-based math exercises (e.g. AddSub, Zahlenmauer).
-    Handles base SVG document loading, unified header (title & config subtitle),
+    Handles base SVG document generation or loading, unified header (title & config subtitle),
     footer (student info), and layout packing into the designated drawing area.
     """
 
@@ -38,10 +42,55 @@ class CanvasExerciseTemplate:
     DRAWING_AREA_ID = "drawingArea"
     DRAWING_AREA_RECT_ID = "drawingAreaRect"
 
-    def __init__(self, template_path: Union[str, Path]):
-        self.template_path = Path(template_path)
-        self.doc = SvgDocument.from_file(self.template_path)
+    # Default drawing area bounding box within A4 page (margins in mm)
+    DEFAULT_DRAWING_X = 14.0
+    DEFAULT_DRAWING_Y = 32.0
+    DEFAULT_DRAWING_WIDTH = 182.0
+    DEFAULT_DRAWING_HEIGHT = 244.0
+
+    def __init__(self, template_path: Optional[Union[str, Path]] = None):
+        self.template_path = Path(template_path) if template_path else None
+        if self.template_path is not None and self.template_path.exists():
+            self.doc = SvgDocument.from_file(self.template_path)
+        else:
+            self.doc = self.create_blank_canvas()
         self._init_canvas_elements()
+
+    @classmethod
+    def create_blank_canvas(
+        cls,
+        width: float = PAGE_WIDTH,
+        height: float = PAGE_HEIGHT,
+        drawing_x: float = DEFAULT_DRAWING_X,
+        drawing_y: float = DEFAULT_DRAWING_Y,
+        drawing_width: float = DEFAULT_DRAWING_WIDTH,
+        drawing_height: float = DEFAULT_DRAWING_HEIGHT,
+    ) -> SvgDocument:
+        """
+        Dynamically generates a standard A4 worksheet SVG document with drawing area,
+        title, configuration subtitle, and footer directly from code.
+        """
+        raw_svg = (
+            f'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+            f'<svg width="{width:.0f}mm" height="{height:.0f}mm" viewBox="0 0 {width:.0f} {height:.0f}" '
+            f'version="1.1" id="svg1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">\n'
+            f'  <defs id="defs1" />\n'
+            f'  <g id="layer1">\n'
+            f'    <g id="{cls.DRAWING_AREA_ID}">\n'
+            f'      <rect style="fill:none;stroke:none;" id="{cls.DRAWING_AREA_RECT_ID}" '
+            f'width="{drawing_width:.0f}" height="{drawing_height:.0f}" x="{drawing_x:.0f}" y="{drawing_y:.0f}" />\n'
+            f'    </g>\n'
+            f'    <text xml:space="preserve" style="{get_title_style()}" x="{HEADER_TITLE_X}" y="{HEADER_TITLE_Y}" id="{cls.TITLE_ID}">\n'
+            f'      <tspan id="{cls.TITLE_SPAN}" style="{get_title_style()}" x="{HEADER_TITLE_X}" y="{HEADER_TITLE_Y}">Titel</tspan>\n'
+            f'      <tspan id="{cls.CONFIG_SPAN}" style="{get_subtitle_style()}" x="{HEADER_TITLE_X}" y="{HEADER_SUBTITLE_Y}">Untertitel</tspan>\n'
+            f'    </text>\n'
+            f'    <text xml:space="preserve" style="{get_footer_style()}" x="{FOOTER_DEFAULT_X}" y="{FOOTER_DEFAULT_Y}" id="{cls.FOOTER_ID}">\n'
+            f'      <tspan id="{cls.FOOTER_SPAN}" style="{get_footer_style()}">{DEFAULT_FOOTER_TEXT}</tspan>\n'
+            f'    </text>\n'
+            f'  </g>\n'
+            f'</svg>'
+        )
+        return SvgDocument.from_string(raw_svg)
 
     def _init_canvas_elements(self) -> None:
         """Locates drawing area, title, and footer elements in the document."""
@@ -221,3 +270,148 @@ class CanvasExerciseTemplate:
         cloned.doc = self.doc.clone()
         cloned._init_canvas_elements()
         return cloned
+
+
+def calc_adaptive_font_size(
+    text: str,
+    max_font_size: float = 6.0,
+    min_font_size: float = 3.8,
+    length_thresholds: Optional[list[tuple[int, float]]] = None,
+) -> float:
+    """
+    Computes an adaptive font size based on text length to prevent clipping.
+
+    :param text: Text string to measure.
+    :param max_font_size: Font size for short text (<=1 character).
+    :param min_font_size: Minimum font size for longer numbers.
+    :param length_thresholds: Optional list of (max_len, font_size) pairs.
+    """
+    length = len(str(text))
+    if length_thresholds:
+        for max_len, size in length_thresholds:
+            if length <= max_len:
+                return size
+        return min_font_size
+
+    if length <= 1:
+        return max_font_size
+    elif length == 2:
+        return max(min_font_size, max_font_size - 0.5)
+    elif length == 3:
+        return max(min_font_size, max_font_size - 1.5)
+    else:
+        return min_font_size
+
+
+def center_text_in_rect(
+    text_elem: Any,
+    rect_elem: Optional[Any] = None,
+    fallback_bounds: Optional[tuple[float, float, float, float]] = None,
+) -> tuple[float, float]:
+    """
+    Centers a <text> element (and its child <tspan>s) precisely inside a bounding <rect>.
+    Strips distorting Inkscape attributes (transform, lengthAdjust, textLength) and
+    sets x, y, text-anchor='middle', and dominant-baseline='central'.
+
+    :param text_elem: The SVG text element.
+    :param rect_elem: Optional SVG rect element to center inside.
+    :param fallback_bounds: (x, y, width, height) used if rect_elem is None or lacks attributes.
+    :return: Computed center coordinates (cx, cy).
+    """
+    if rect_elem is not None:
+        rx = float(rect_elem.attrib.get("x", fallback_bounds[0] if fallback_bounds else 0.0))
+        ry = float(rect_elem.attrib.get("y", fallback_bounds[1] if fallback_bounds else 0.0))
+        rw = float(rect_elem.attrib.get("width", fallback_bounds[2] if fallback_bounds else 0.0))
+        rh = float(rect_elem.attrib.get("height", fallback_bounds[3] if fallback_bounds else 0.0))
+        cx = rx + rw / 2.0
+        cy = ry + rh / 2.0
+    elif fallback_bounds is not None:
+        cx = fallback_bounds[0] + fallback_bounds[2] / 2.0
+        cy = fallback_bounds[1] + fallback_bounds[3] / 2.0
+    else:
+        cx, cy = 0.0, 0.0
+
+    for attr in ["transform", "lengthAdjust", "textLength"]:
+        text_elem.attrib.pop(attr, None)
+    for child in text_elem:
+        for attr in ["transform", "lengthAdjust", "textLength"]:
+            child.attrib.pop(attr, None)
+
+    text_elem.attrib["x"] = f"{cx:.6f}"
+    text_elem.attrib["y"] = f"{cy:.6f}"
+    text_elem.attrib["text-anchor"] = "middle"
+    text_elem.attrib["dominant-baseline"] = "central"
+
+    for child in text_elem:
+        child.attrib["x"] = f"{cx:.6f}"
+        child.attrib["y"] = f"{cy:.6f}"
+        child.attrib["text-anchor"] = "middle"
+        child.attrib["dominant-baseline"] = "central"
+
+    return cx, cy
+
+
+def center_text_in_circle(
+    text_elem: Any,
+    circle_elem: Optional[Any] = None,
+    fallback_center: Optional[tuple[float, float]] = None,
+) -> tuple[float, float]:
+    """
+    Centers a <text> element (and its child <tspan>s) precisely inside a <circle>.
+    Strips distorting Inkscape attributes (transform, lengthAdjust, textLength) and
+    sets x, y, text-anchor='middle', and dominant-baseline='central'.
+
+    :param text_elem: The SVG text element.
+    :param circle_elem: Optional SVG circle element to center inside.
+    :param fallback_center: (cx, cy) used if circle_elem is None or lacks attributes.
+    :return: Computed center coordinates (cx, cy).
+    """
+    if circle_elem is not None:
+        cx = float(circle_elem.attrib.get("cx", fallback_center[0] if fallback_center else 0.0))
+        cy = float(circle_elem.attrib.get("cy", fallback_center[1] if fallback_center else 0.0))
+    elif fallback_center is not None:
+        cx, cy = fallback_center
+    else:
+        cx, cy = 0.0, 0.0
+
+    for attr in ["transform", "lengthAdjust", "textLength"]:
+        text_elem.attrib.pop(attr, None)
+    for child in text_elem:
+        for attr in ["transform", "lengthAdjust", "textLength"]:
+            child.attrib.pop(attr, None)
+
+    text_elem.attrib["x"] = f"{cx:.6f}"
+    text_elem.attrib["y"] = f"{cy:.6f}"
+    text_elem.attrib["text-anchor"] = "middle"
+    text_elem.attrib["dominant-baseline"] = "central"
+
+    for child in text_elem:
+        child.attrib["x"] = f"{cx:.6f}"
+        child.attrib["y"] = f"{cy:.6f}"
+        child.attrib["text-anchor"] = "middle"
+        child.attrib["dominant-baseline"] = "central"
+
+    return cx, cy
+
+
+def highlight_solution_box(
+    rect_elem: Any,
+    text_elem: Any,
+    fill: str = FILL_SOLUTION,
+    stroke: str = COLOR_SOLUTION,
+    stroke_width: str = "0.8",
+) -> None:
+    """
+    Applies solution highlight colors to a box and ensures the text element
+    is drawn on top of the tinted background rect.
+    """
+    rect_elem.attrib["style"] = (
+        f"fill:{fill};stroke:{stroke};stroke-width:{stroke_width};"
+        "stroke-linejoin:round;stroke-opacity:1"
+    )
+    raw_text = text_elem.raw_element if hasattr(text_elem, "raw_element") else text_elem
+    raw_parent = raw_text.getparent()
+    if raw_parent is not None:
+        raw_parent.remove(raw_text)
+        raw_parent.append(raw_text)
+

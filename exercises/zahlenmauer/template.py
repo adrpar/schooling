@@ -49,10 +49,8 @@ def _get_brick_geometry(base_size: int) -> tuple[float, float]:
 class ZahlenmauerTemplate(CanvasExerciseTemplate):
     """Renders Zahlenmauer (Addition Pyramid) puzzles as SVG sheets."""
 
-    _DEFAULT_TEMPLATE = Path(__file__).parent / "drawing.svg"
-
     def __init__(self, template_path: Optional[Union[str, Path]] = None):
-        super().__init__(template_path or self._DEFAULT_TEMPLATE)
+        super().__init__(template_path)
 
     def create_sheets(
         self,

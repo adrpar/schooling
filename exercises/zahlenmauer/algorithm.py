@@ -17,93 +17,141 @@ class ZahlenmauerPuzzle(NamedTuple):
     difficulty: Difficulty
 
 
+Cell = tuple[int, int]
+DeductionStep = tuple[str, Cell]
+
+
 class ZahlenmauerSolver:
-    @staticmethod
+    """
+    Simulates step-by-step human student deduction on a Zahlenmauer.
+    Verifies whether a puzzle configuration can be logically deduced without guessing.
+    """
+
+    @classmethod
     def solve(
+        cls,
         base_size: int,
-        known_cells: dict[tuple[int, int], int],
+        known_cells: dict[Cell, int],
         allow_algebraic: bool = False,
-    ) -> tuple[bool, list[tuple[str, tuple[int, int]]]]:
+    ) -> tuple[bool, list[DeductionStep]]:
         """
-        Simulates step-by-step student deduction on a Zahlenmauer.
+        Public entry point to simulate deduction on a Zahlenmauer.
 
         :param base_size: Number of bricks at the bottom row.
         :param known_cells: Map of (row, col) -> value of given clues.
         :param allow_algebraic: Whether to allow linear combination puzzle steps (e.g. 2b = Top - a - c).
         :return: (is_completely_solved, deduction_history)
         """
-        current = dict(known_cells)
-        history: list[tuple[str, tuple[int, int]]] = []
+        solver = cls(base_size, known_cells, allow_algebraic=allow_algebraic)
+        return solver.run()
 
+    def __init__(
+        self,
+        base_size: int,
+        known_cells: dict[Cell, int],
+        allow_algebraic: bool = False,
+    ):
+        self.base_size = base_size
+        self.grid = dict(known_cells)
+        self.allow_algebraic = allow_algebraic
+        self.history: list[DeductionStep] = []
+
+    def run(self) -> tuple[bool, list[DeductionStep]]:
+        """Executes deduction passes until solved, stalled, or contradiction found."""
         while True:
-            progress = False
-
-            # 1. Step-by-step triangular additions and subtractions
-            for r in range(1, base_size):
-                for c in range(base_size - r):
-                    p = (r, c)
-                    l = (r - 1, c)
-                    right = (r - 1, c + 1)
-
-                    # Upward addition: Left + Right = Parent
-                    if l in current and right in current and p not in current:
-                        current[p] = current[l] + current[right]
-                        history.append(("add", p))
-                        progress = True
-                    # Downward subtraction: Parent - Left = Right
-                    elif p in current and l in current and right not in current:
-                        val = current[p] - current[l]
-                        if val < 0:
-                            return False, history
-                        current[right] = val
-                        history.append(("sub", right))
-                        progress = True
-                    # Downward subtraction: Parent - Right = Left
-                    elif p in current and right in current and l not in current:
-                        val = current[p] - current[right]
-                        if val < 0:
-                            return False, history
-                        current[l] = val
-                        history.append(("sub", l))
-                        progress = True
-
+            # 1. Primary rule: Direct 2-out-of-3 triangular arithmetic (addition/subtraction)
+            progress, is_valid = self._try_triad_deductions()
+            if not is_valid:
+                return False, self.history
             if progress:
                 continue
 
-            # 2. Algebraic single-variable reduction (Knobelaufgabe, for Hard)
-            if allow_algebraic:
-                for r in range(1, base_size):
-                    for c in range(base_size - r):
-                        if (r, c) in current:
-                            target_val = current[(r, c)]
-                            unknowns: list[tuple[tuple[int, int], int]] = []
-                            known_sum = 0
+            # 2. Secondary rule: Linear combinations across base cells (Knobelaufgabe for Hard)
+            if self.allow_algebraic and self._try_algebraic_deductions():
+                continue
 
-                            for k in range(r + 1):
-                                base_cell = (0, c + k)
-                                coeff = math.comb(r, k)
-                                if base_cell in current:
-                                    known_sum += coeff * current[base_cell]
-                                else:
-                                    unknowns.append((base_cell, coeff))
+            # No further deduction possible
+            break
 
-                            if len(unknowns) == 1:
-                                target_cell, coeff = unknowns[0]
-                                rem = target_val - known_sum
-                                if rem > 0 and rem % coeff == 0:
-                                    current[target_cell] = rem // coeff
-                                    history.append(("algebraic", target_cell))
-                                    progress = True
-                                    break
-                    if progress:
-                        break
+        total_cells = self.base_size * (self.base_size + 1) // 2
+        is_solved = len(self.grid) == total_cells
+        return is_solved, self.history
 
-            if not progress:
-                break
+    def _iter_triads(self):
+        """Yields (parent, left_child, right_child) for every brick triad in the wall."""
+        for r in range(1, self.base_size):
+            for c in range(self.base_size - r):
+                yield (r, c), (r - 1, c), (r - 1, c + 1)
 
-        total_cells = base_size * (base_size + 1) // 2
-        is_solved = len(current) == total_cells
-        return is_solved, history
+    def _try_triad_deductions(self) -> tuple[bool, bool]:
+        """
+        Scans all triads for direct 2-out-of-3 arithmetic inferences:
+        - Upward: left + right -> parent
+        - Downward: parent - left -> right
+        - Downward: parent - right -> left
+        Returns (progress_made, is_valid).
+        """
+        progress = False
+        for parent, left, right in self._iter_triads():
+            # Upward addition
+            if left in self.grid and right in self.grid and parent not in self.grid:
+                self.grid[parent] = self.grid[left] + self.grid[right]
+                self.history.append(("add", parent))
+                progress = True
+
+            # Downward subtraction (missing right child)
+            elif parent in self.grid and left in self.grid and right not in self.grid:
+                val = self.grid[parent] - self.grid[left]
+                if val < 0:
+                    return False, False
+                self.grid[right] = val
+                self.history.append(("sub", right))
+                progress = True
+
+            # Downward subtraction (missing left child)
+            elif parent in self.grid and right in self.grid and left not in self.grid:
+                val = self.grid[parent] - self.grid[right]
+                if val < 0:
+                    return False, False
+                self.grid[left] = val
+                self.history.append(("sub", left))
+                progress = True
+
+        return progress, True
+
+    def _try_algebraic_deductions(self) -> bool:
+        """
+        Attempts to solve for an unknown base cell by expressing a known higher
+        brick as a linear combination of base bricks (using binomial coefficients).
+        """
+        for r in range(1, self.base_size):
+            for c in range(self.base_size - r):
+                cell = (r, c)
+                if cell not in self.grid:
+                    continue
+
+                target_val = self.grid[cell]
+                unknowns: list[tuple[Cell, int]] = []
+                known_sum = 0
+
+                for k in range(r + 1):
+                    base_cell = (0, c + k)
+                    coeff = math.comb(r, k)
+                    if base_cell in self.grid:
+                        known_sum += coeff * self.grid[base_cell]
+                    else:
+                        unknowns.append((base_cell, coeff))
+
+                # If exactly one base cell is unknown in this subtree, deduce it directly
+                if len(unknowns) == 1:
+                    target_cell, coeff = unknowns[0]
+                    remainder = target_val - known_sum
+                    if remainder > 0 and remainder % coeff == 0:
+                        self.grid[target_cell] = remainder // coeff
+                        self.history.append(("algebraic", target_cell))
+                        return True
+
+        return False
 
 
 def get_optimal_pyramid_count(base_size: int) -> int:

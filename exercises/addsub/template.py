@@ -5,20 +5,11 @@ from exercises.utils import operator_to_string
 from svg.canvas_template import CanvasExerciseTemplate
 from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
 
-_TEMPLATE = Path(__file__).parent / "drawing.svg"
-
-
 class AddSubTemplate(CanvasExerciseTemplate):
     """Template for generating AddSub written calculation exercise sheets."""
 
-    VALUE_ID_PREFIX = "value"
-    OPERATOR_TEXT_ID_PREFIX = "operatorText"
-
     def __init__(self, template_path: Optional[Union[str, Path]] = None):
-        super().__init__(template_path or _TEMPLATE)
-        # Retain backward-compatible properties
-        self.svg = self.doc
-        self.title_tspan_elements = self.title_tspans
+        super().__init__(template_path)
 
     def create_new(
         self,
@@ -45,5 +36,3 @@ class AddSubTemplate(CanvasExerciseTemplate):
         self.distribute_exercises(exercise_nodes)
         self.write(filename_addsub)
 
-    def _set_text(self, element, text: str) -> None:
-        element[0].text = text
