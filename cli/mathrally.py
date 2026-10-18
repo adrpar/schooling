@@ -14,10 +14,17 @@ from exercises.mathrally.template import RallyTemplate
 from svg.svg_handler import render_svg_to_pdf
 
 
+from pathlib import Path
+
 @click.command()
 @click.option("--output", default="test.svg", help="Output file name for the rally.")
 @click.option(
     "--solution", default="test_res.svg", help="Output file name for the solution."
+)
+@click.option(
+    "--template",
+    default=None,
+    help="Template filename or path (e.g. Rally1.svg, Rally2.svg, or a full path).",
 )
 @click.option(
     "--format",
@@ -25,11 +32,24 @@ from svg.svg_handler import render_svg_to_pdf
     default="both",
     help="Output format: SVG, PDF, or both.",
 )
-def mathrally(output, solution, format):
+def mathrally(output, solution, template, format):
     """Generate a math rally SVG."""
-    template = RallyTemplate("{}/{}".format(TEMPLATE_PATH, TEMPLATE_NAME))
+    if template is not None:
+        template_file = Path(template)
+        if not template_file.exists():
+            candidate = Path(TEMPLATE_PATH) / template
+            if candidate.exists():
+                template_file = candidate
+            else:
+                candidate_svg = Path(TEMPLATE_PATH) / f"{template}.svg"
+                if candidate_svg.exists():
+                    template_file = candidate_svg
+    else:
+        template_file = Path(TEMPLATE_PATH) / TEMPLATE_NAME
+
+    rally_template = RallyTemplate(template_file)
     algorithm = RallyAlgorithm(
-        OPERATORS, MIN_VALUE, MAX_VALUE, template.num_operators, SEED
+        OPERATORS, MIN_VALUE, MAX_VALUE, rally_template.num_operators, SEED
     )
     algorithm.build_rally()
 
@@ -40,13 +60,13 @@ def mathrally(output, solution, format):
         pdf_solution = solution.replace(".svg", ".pdf")
 
         if format in ["svg", "both"]:
-            template.create_new_rally(algorithm, output, solution)
+            rally_template.create_new_rally(algorithm, output, solution)
             click.echo(f"Rally generated: {output}, Solution generated: {solution}")
         else:  # Temporary SVG files for PDF generation
             temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".svg")
             temp_solution = tempfile.NamedTemporaryFile(delete=False, suffix=".svg")
             temp_files.extend([temp_output.name, temp_solution.name])
-            template.create_new_rally(algorithm, temp_output.name, temp_solution.name)
+            rally_template.create_new_rally(algorithm, temp_output.name, temp_solution.name)
             output, solution = temp_output.name, temp_solution.name
 
         if format in ["pdf", "both"]:
