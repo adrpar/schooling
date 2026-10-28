@@ -16,15 +16,7 @@ from svg.styles import (
     FONT_FAMILY,
 )
 
-# Fallback dimensions for Math Rally SVG value box elements (from Inkscape template Rally1.svg).
-# These coordinates define the default rectangle bounding box and circle center used when
-# individual elements in the template do not declare explicit x/y/width/height/cx/cy attributes.
-# - RALLY_VALUE_RECT_FALLBACK_BOUNDS: (x=33.76, y=57.66, width=20.75, height=12.74 in mm),
-#   corresponding to the dimensions of the initial value.0 box.
-# - RALLY_OPERATOR_CIRCLE_FALLBACK_CENTER: (cx=144.28, cy=126.31 in mm),
-#   corresponding to the center point of the first operator circle.
-RALLY_VALUE_RECT_FALLBACK_BOUNDS = (33.757515, 57.658085, 20.754112, 12.74199)
-RALLY_OPERATOR_CIRCLE_FALLBACK_CENTER = (144.27673, 126.3138)
+
 
 
 class RallyTemplate(CanvasExerciseTemplate):
@@ -104,8 +96,12 @@ class RallyTemplate(CanvasExerciseTemplate):
             if raw_parent is not None
             else None
         )
+        if rect is None and raw_text is not None:
+            prev = raw_text.getprevious()
+            if prev is not None and prev.tag.endswith("rect"):
+                rect = prev
 
-        center_text_in_rect(text_elem, rect_elem=rect, fallback_bounds=RALLY_VALUE_RECT_FALLBACK_BOUNDS)
+        center_text_in_rect(text_elem, rect_elem=rect)
 
         fsize = calc_adaptive_font_size(
             val_text,
@@ -147,7 +143,7 @@ class RallyTemplate(CanvasExerciseTemplate):
         ):
             circle = raw_parent.find("{http://www.w3.org/2000/svg}circle")
 
-        center_text_in_circle(text_elem, circle_elem=circle, fallback_center=RALLY_OPERATOR_CIRCLE_FALLBACK_CENTER)
+        center_text_in_circle(text_elem, circle_elem=circle)
 
         fsize = calc_adaptive_font_size(
             op_text,

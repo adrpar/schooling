@@ -27,6 +27,11 @@ from svg.svg_groups import distribute_groups_in_drawing_area
 from svg.svg_handler import SvgDocument, SvgElement
 
 
+import lxml.etree as ET
+
+SVG_NS = "http://www.w3.org/2000/svg"
+
+
 class CanvasExerciseTemplate:
     """
     Reusable base class for canvas-based math exercises (e.g. AddSub, Zahlenmauer).
@@ -67,30 +72,88 @@ class CanvasExerciseTemplate:
         drawing_height: float = DEFAULT_DRAWING_HEIGHT,
     ) -> SvgDocument:
         """
-        Dynamically generates a standard A4 worksheet SVG document with drawing area,
-        title, configuration subtitle, and footer directly from code.
+        Dynamically constructs a standard A4 worksheet SVG document tree using
+        properly namespaced SvgElement nodes, with a designated drawingArea, title, and footer.
         """
-        raw_svg = (
-            f'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-            f'<svg width="{width:.0f}mm" height="{height:.0f}mm" viewBox="0 0 {width:.0f} {height:.0f}" '
-            f'version="1.1" id="svg1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">\n'
-            f'  <defs id="defs1" />\n'
-            f'  <g id="layer1">\n'
-            f'    <g id="{cls.DRAWING_AREA_ID}">\n'
-            f'      <rect style="fill:none;stroke:none;" id="{cls.DRAWING_AREA_RECT_ID}" '
-            f'width="{drawing_width:.0f}" height="{drawing_height:.0f}" x="{drawing_x:.0f}" y="{drawing_y:.0f}" />\n'
-            f'    </g>\n'
-            f'    <text xml:space="preserve" style="{get_title_style()}" x="{HEADER_TITLE_X}" y="{HEADER_TITLE_Y}" id="{cls.TITLE_ID}">\n'
-            f'      <tspan id="{cls.TITLE_SPAN}" style="{get_title_style()}" x="{HEADER_TITLE_X}" y="{HEADER_TITLE_Y}">Titel</tspan>\n'
-            f'      <tspan id="{cls.CONFIG_SPAN}" style="{get_subtitle_style()}" x="{HEADER_TITLE_X}" y="{HEADER_SUBTITLE_Y}">Untertitel</tspan>\n'
-            f'    </text>\n'
-            f'    <text xml:space="preserve" style="{get_footer_style()}" x="{FOOTER_DEFAULT_X}" y="{FOOTER_DEFAULT_Y}" id="{cls.FOOTER_ID}">\n'
-            f'      <tspan id="{cls.FOOTER_SPAN}" style="{get_footer_style()}">{DEFAULT_FOOTER_TEXT}</tspan>\n'
-            f'    </text>\n'
-            f'  </g>\n'
-            f'</svg>'
+        raw_root = ET.Element(
+            f"{{{SVG_NS}}}svg",
+            nsmap={None: SVG_NS, "svg": SVG_NS},
+            attrib={
+                "width": f"{width:.0f}mm",
+                "height": f"{height:.0f}mm",
+                "viewBox": f"0 0 {width:.0f} {height:.0f}",
+                "version": "1.1",
+                "id": "svg1",
+            },
         )
-        return SvgDocument.from_string(raw_svg)
+        root = SvgElement(raw_root)
+        root.create_child(f"{{{SVG_NS}}}defs", attrib={"id": "defs1"})
+        layer = root.create_child(f"{{{SVG_NS}}}g", attrib={"id": "layer1"})
+
+        drawing_group = layer.create_child(f"{{{SVG_NS}}}g", attrib={"id": cls.DRAWING_AREA_ID})
+        drawing_group.create_child(
+            f"{{{SVG_NS}}}rect",
+            attrib={
+                "id": cls.DRAWING_AREA_RECT_ID,
+                "x": f"{drawing_x:.0f}",
+                "y": f"{drawing_y:.0f}",
+                "width": f"{drawing_width:.0f}",
+                "height": f"{drawing_height:.0f}",
+                "style": "fill:none;stroke:none;",
+            },
+        )
+
+        title_elem = layer.create_child(
+            f"{{{SVG_NS}}}text",
+            attrib={
+                "id": cls.TITLE_ID,
+                "x": str(HEADER_TITLE_X),
+                "y": str(HEADER_TITLE_Y),
+                "style": get_title_style(),
+                "{http://www.w3.org/XML/1998/namespace}space": "preserve",
+            },
+        )
+        title_elem.create_child(
+            f"{{{SVG_NS}}}tspan",
+            attrib={
+                "id": cls.TITLE_SPAN,
+                "x": str(HEADER_TITLE_X),
+                "y": str(HEADER_TITLE_Y),
+                "style": get_title_style(),
+            },
+            text="Titel",
+        )
+        title_elem.create_child(
+            f"{{{SVG_NS}}}tspan",
+            attrib={
+                "id": cls.CONFIG_SPAN,
+                "x": str(HEADER_TITLE_X),
+                "y": str(HEADER_SUBTITLE_Y),
+                "style": get_subtitle_style(),
+            },
+            text="Untertitel",
+        )
+
+        footer_elem = layer.create_child(
+            f"{{{SVG_NS}}}text",
+            attrib={
+                "id": cls.FOOTER_ID,
+                "x": str(FOOTER_DEFAULT_X),
+                "y": str(FOOTER_DEFAULT_Y),
+                "style": get_footer_style(),
+                "{http://www.w3.org/XML/1998/namespace}space": "preserve",
+            },
+        )
+        footer_elem.create_child(
+            f"{{{SVG_NS}}}tspan",
+            attrib={
+                "id": cls.FOOTER_SPAN,
+                "style": get_footer_style(),
+            },
+            text=DEFAULT_FOOTER_TEXT,
+        )
+
+        return SvgDocument(root)
 
     def _init_canvas_elements(self) -> None:
         """Locates drawing area, title, and footer elements in the document."""
@@ -329,7 +392,8 @@ def center_text_in_rect(
         cx = fallback_bounds[0] + fallback_bounds[2] / 2.0
         cy = fallback_bounds[1] + fallback_bounds[3] / 2.0
     else:
-        cx, cy = 0.0, 0.0
+        cx = float(text_elem.attrib.get("x", 0.0))
+        cy = float(text_elem.attrib.get("y", 0.0))
 
     for attr in ["transform", "lengthAdjust", "textLength"]:
         text_elem.attrib.pop(attr, None)
@@ -363,7 +427,7 @@ def center_text_in_circle(
 
     :param text_elem: The SVG text element.
     :param circle_elem: Optional SVG circle element to center inside.
-    :param fallback_center: (cx, cy) used if circle_elem is None or lacks attributes.
+    :param fallback_center: Optional (cx, cy) used only if circle_elem is None.
     :return: Computed center coordinates (cx, cy).
     """
     if circle_elem is not None:
@@ -372,7 +436,8 @@ def center_text_in_circle(
     elif fallback_center is not None:
         cx, cy = fallback_center
     else:
-        cx, cy = 0.0, 0.0
+        cx = float(text_elem.attrib.get("x", 0.0))
+        cy = float(text_elem.attrib.get("y", 0.0))
 
     for attr in ["transform", "lengthAdjust", "textLength"]:
         text_elem.attrib.pop(attr, None)
