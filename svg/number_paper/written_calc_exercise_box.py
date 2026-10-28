@@ -1,32 +1,41 @@
-import lxml.etree as ET
+from typing import Optional
+
 from svg.number_paper.paper_cell import NumericalPaperCell
-from svg.svg_groups import calculate_group_dimensions
+from svg.svg_handler import NAMESPACE_MAP, SvgElement
 
 BOX_STROKE_WIDTH = 0.223193
 
 
+
 class WrittenCalcExerciseBox:
-    NAMESPACE_MAP = {
-        "html": "http://www.w3.org/1999/xhtml",
-        "xlink": "http://www.w3.org/1999/xlink",
-        "xml": "http://www.w3.org/XML/1998/namespace",
-        "xmlns": "http://www.w3.org/2000/xmlns/",
-        None: "http://www.w3.org/2000/svg",
-    }
+    NAMESPACE_MAP = NAMESPACE_MAP
 
     OPERATORS = ["+", "-", "×", "÷"]
 
     NUM_SPACES_BETWEEN_MAX_NUMBER_AND_OPERATOR = 1
     NUM_SPACES_BEFORE_OPERATOR = 1
 
-    def __init__(self, operation, values: list[int]):
+    def __init__(
+        self,
+        operation,
+        values: list[int],
+        exercise_number: Optional[int] = None,
+    ):
         self.operation = operation
         self.values = values
+        self.exercise_number = exercise_number
 
-    def generateBox(self):
-        return_element = ET.Element(
-            "g", id="exerciseBox", transform="translate(0.0,0.0)"
+    def generateBox(self, exercise_number: Optional[int] = None) -> SvgElement:
+        num = exercise_number if exercise_number is not None else self.exercise_number
+        return_element = SvgElement(
+            "g", attrib={"id": "exerciseBox", "transform": "translate(0.0,0.0)"}
         )
+
+        if num is not None:
+            from svg.canvas_template import CanvasExerciseTemplate
+
+            label = CanvasExerciseTemplate.create_exercise_label(num, x=0.0, y=-2.2)
+            return_element.append(label)
 
         max_value = max(self.values)
         num_boxes = (
@@ -41,7 +50,8 @@ class WrittenCalcExerciseBox:
 
         return return_element
 
-    def _add_box_matrix(self, node, values, num_x, num_y):
+
+    def _add_box_matrix(self, node: SvgElement, values, num_x, num_y):
         number_box = NumericalPaperCell(0)
 
         box_rect = number_box.rect
@@ -113,53 +123,54 @@ class WrittenCalcExerciseBox:
                 node.append(new_box.group)
 
     def _draw_line(
-        self, svg_root, origin_x, origin_y, target_x, target_y, line_type="single"
+        self,
+        svg_root: SvgElement,
+        origin_x,
+        origin_y,
+        target_x,
+        target_y,
+        line_type="single",
     ):
         """
         Draws a single or double stroke line in an SVG.
-
-        :param svg_root: The root element of the SVG document.
-        :param origin_x: The x-coordinate of the line's origin.
-        :param origin_y: The y-coordinate of the line's origin.
-        :param target_x: The x-coordinate of the line's target.
-        :param target_y: The y-coordinate of the line's target.
-        :param line_type: Type of line ('single' or 'double').
         """
-
         # Single stroke line (black color, 2px width)
         if line_type == "single":
-            line = ET.Element(
+            svg_root.create_child(
                 "line",
-                x1=str(origin_x),
-                y1=str(origin_y),
-                x2=str(target_x),
-                y2=str(target_y),
-                style="stroke:black;stroke-width:2",
+                attrib={
+                    "x1": str(origin_x),
+                    "y1": str(origin_y),
+                    "x2": str(target_x),
+                    "y2": str(target_y),
+                    "style": "stroke:black;stroke-width:2",
+                },
             )
-            svg_root.append(line)
 
         # Double stroke line (two lines - one for outer stroke and one for inner)
         elif line_type == "double":
             stroke_width = 0.5
 
-            # Outer stroke (3px width)
-            outer_line = ET.Element(
+            # Outer stroke
+            svg_root.create_child(
                 "line",
-                x1=str(origin_x),
-                y1=str(origin_y - 1.5 + stroke_width / 2),
-                x2=str(target_x),
-                y2=str(target_y - 1.5 + stroke_width / 2),
-                style="stroke:black;stroke-width:" + str(stroke_width),
+                attrib={
+                    "x1": str(origin_x),
+                    "y1": str(origin_y - 1.5 + stroke_width / 2),
+                    "x2": str(target_x),
+                    "y2": str(target_y - 1.5 + stroke_width / 2),
+                    "style": f"stroke:black;stroke-width:{stroke_width}",
+                },
             )
-            svg_root.append(outer_line)
 
-            # Inner stroke (2px width)
-            inner_line = ET.Element(
+            # Inner stroke
+            svg_root.create_child(
                 "line",
-                x1=str(origin_x),
-                y1=str(origin_y + 1.5 + stroke_width / 2),
-                x2=str(target_x),
-                y2=str(target_y + 1.5 + stroke_width / 2),
-                style="stroke:black;stroke-width:" + str(stroke_width),
-            )  # Inner line is white to create the double effect
-            svg_root.append(inner_line)
+                attrib={
+                    "x1": str(origin_x),
+                    "y1": str(origin_y + 1.5 + stroke_width / 2),
+                    "x2": str(target_x),
+                    "y2": str(target_y + 1.5 + stroke_width / 2),
+                    "style": f"stroke:black;stroke-width:{stroke_width}",
+                },
+            )

@@ -1,5 +1,5 @@
 import unittest
-from addSubWritten.algorithm import Operator
+from core.operators import Operator
 import lxml.etree as ET
 from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
 
