@@ -1,15 +1,11 @@
-from copy import deepcopy
-from enum import Enum
-from random import choice, randrange, seed
+import logging
+from random import Random
 
-__all__ = ["AddSubAlgorithm", "Operator"]
+from core.operators import Operator
 
+__all__ = ["AddSubAlgorithm"]
 
-class Operator(Enum):
-    ADDITION = 1
-    SUBTRACTION = 2
-    MULTIPLICATION = 3
-    DIVISION = 4
+logger = logging.getLogger(__name__)
 
 
 class AddSubAlgorithm:
@@ -28,26 +24,23 @@ class AddSubAlgorithm:
         self.num_exercises = num_exercises
         self.num_rows_per_exercise = num_rows_per_exercise
         self.seed = rand_seed
-
-        seed(rand_seed)
+        self.rng = Random(rand_seed)
 
     def build_addsub(self):
         results = []
 
-        start = randrange(self.max_value)
-
-        for i in range(self.num_exercises):
-            operator = choice(self.operations)
+        for _ in range(self.num_exercises):
+            operator = self.rng.choice(self.operations)
 
             counter = 0
             while True:
                 counter += 1
-                if counter > 10:
+                if counter > 100:
                     raise RuntimeError("addsub has no solution. Infinite loop.")
 
                 values = [
-                    randrange(self.min_value, self.max_value)
-                    for i in range(self.num_rows_per_exercise)
+                    self.rng.randrange(self.min_value, max(self.min_value + 1, self.max_value))
+                    for _ in range(self.num_rows_per_exercise)
                 ]
 
                 if operator == Operator.SUBTRACTION:
@@ -59,11 +52,11 @@ class AddSubAlgorithm:
                     )
 
                 if self.choice_criterium(operator, values):
-                    print("CHOICE: ", operator, values)
+                    logger.debug("CHOICE: %s %s", operator, values)
                     results.append((operator, values))
                     break
                 else:
-                    print(operator, values)
+                    logger.debug("Rejected: %s %s", operator, values)
 
         self.result = results
 
@@ -73,9 +66,7 @@ class AddSubAlgorithm:
                 return False
 
         if operator == Operator.SUBTRACTION:
-            value_copy = deepcopy(values)
-            value_copy[0] = -1 * value_copy[0]
-            if sum([-1 * v for v in value_copy]) < 0:
+            if values[0] - sum(values[1:]) < 0:
                 return False
 
         return True

@@ -1,7 +1,7 @@
 import os
 import tempfile
 import click
-from addSubWritten.addsub import (
+from exercises.addsub.addsub import (
     OPERATORS,
     MIN_VALUE,
     MAX_VALUE,
@@ -9,8 +9,8 @@ from addSubWritten.addsub import (
     NUM_ROWS_PER_EXERCISE,
     SEED,
 )
-from addSubWritten.algorithm import AddSubAlgorithm
-from addSubWritten.template import AddSubTemplate
+from exercises.addsub.algorithm import AddSubAlgorithm
+from exercises.addsub.template import AddSubTemplate
 from svg.svg_handler import render_svg_to_pdf
 
 
@@ -24,11 +24,17 @@ from svg.svg_handler import render_svg_to_pdf
     default="both",
     help="Output format: SVG, PDF, or both.",
 )
-def addsub(output, format):
+@click.option(
+    "--num-exercises",
+    type=int,
+    default=20,
+    help="Number of exercises per sheet (default: 20, cleanly fills A4 page).",
+)
+def addsub(output, format, num_exercises):
     """Generate add/sub exercises SVG."""
     template = AddSubTemplate()
     algorithm = AddSubAlgorithm(
-        OPERATORS, MIN_VALUE, MAX_VALUE, NUM_EXERCISES, NUM_ROWS_PER_EXERCISE, SEED
+        OPERATORS, MIN_VALUE, MAX_VALUE, num_exercises, NUM_ROWS_PER_EXERCISE, SEED
     )
     algorithm.build_addsub()
 
@@ -54,3 +60,8 @@ def addsub(output, format):
         for temp_file in temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+if __name__ == "__main__":
+    addsub()
+

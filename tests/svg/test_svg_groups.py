@@ -92,6 +92,30 @@ class TestSvgGroups(unittest.TestCase):
             "Group5 transform is incorrect (should be on the next line).",
         )
 
+    def test_distribute_single_item_centered(self):
+        drawing_area = ET.Element("rect", x="10", y="20", width="200", height="100")
+        drawing_area_group = ET.Element("g")
+        group = ET.Element("g", id="single_pyramid")
+        ET.SubElement(group, "rect", x="0", y="0", width="80", height="60")
+
+        distribute_groups_in_drawing_area([group], drawing_area, drawing_area_group, center_single=True)
+        # 10 + (200 - 80) / 2 = 70.0
+        self.assertEqual(drawing_area_group[0].attrib["transform"], "translate(70.0,20.0)")
+
+    def test_distribute_max_gap_capping(self):
+        drawing_area = ET.Element("rect", x="0", y="0", width="200", height="100")
+        drawing_area_group = ET.Element("g")
+        g1 = ET.Element("g", id="g1")
+        g2 = ET.Element("g", id="g2")
+        ET.SubElement(g1, "rect", x="0", y="0", width="30", height="30")
+        ET.SubElement(g2, "rect", x="0", y="0", width="30", height="30")
+
+        # Without cap, gap = (200 - 60) = 140.0
+        # With max_gap=20.0, cluster = 60 + 20 = 80.0, x_offset = (200 - 80) / 2 = 60.0
+        distribute_groups_in_drawing_area([g1, g2], drawing_area, drawing_area_group, max_gap=20.0)
+        self.assertEqual(drawing_area_group[0].attrib["transform"], "translate(60.0,0.0)")
+        self.assertEqual(drawing_area_group[1].attrib["transform"], "translate(110.0,0.0)")
+
 
 if __name__ == "__main__":
     unittest.main()

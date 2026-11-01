@@ -1,15 +1,6 @@
-from copy import deepcopy
-from enum import Enum
-from random import seed, randrange, choice
-
-from addSubWritten.algorithm import AddSubAlgorithm, Operator
-from addSubWritten.template import AddSubTemplate
-from svg.svg_handler import SVGFile
-from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
-
-import lxml.etree as ET
-
-import re
+from core.operators import Operator
+from exercises.addsub.algorithm import AddSubAlgorithm
+from exercises.addsub.template import AddSubTemplate
 
 BOX_STROKE_WIDTH = 0.223193
 
@@ -35,10 +26,6 @@ def main():
     )
     algorithm.build_addsub()
     template.create_new(algorithm, "test.svg")
-
-    # print(template.value_elements)
-    # print(template.operator_elements)
-    # print(template.title_element)
 
 
 if __name__ == "__main__":
