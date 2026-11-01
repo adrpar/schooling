@@ -146,9 +146,9 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | # | Issue | Location | Notes |
 |---|-------|----------|-------|
 | Q1 | ~~**Duplicated `Operator` enum**~~ | ~~`mathrally/algorithm.py` and `addSubWritten/algorithm.py`~~ | ✅ **Resolved.** Canonical `Operator` now lives in `core/operators.py` and is imported everywhere. |
-| Q2 | **Hardcoded config mixed into module files** | `exercises/addsub/addsub.py`, `exercises/mathrally/mathrally.py` | Config constants (`SEED`, `MAX_VALUE`, etc.) are module-level globals in non-config files. Move to a proper config layer or CLI defaults. |
+| Q2 | ~~**Hardcoded config mixed into module files**~~ | ~~`exercises/addsub/addsub.py`, `exercises/mathrally/mathrally.py`~~ | ✅ **Resolved.** All tunable parameters (`SEED`, `MAX_VALUE`, `OPERATORS`, etc.) are now exposed as CLI options with documented defaults. Module files contain only structural constants. |
 | Q3 | ~~**Template path hardcoded as relative string**~~ | ~~`addSubWritten/template.py` L16~~ | ✅ **Resolved.** `exercises/addsub/template.py` now uses `pathlib.Path(__file__).parent / "drawing.svg"`. |
-| Q4 | **`exercises/addsub/addsub.py` is both a config file and a legacy entry point** | `exercises/addsub/addsub.py` | Dead imports have been removed. `main()` kept for compatibility — can be removed separately. |
+| Q4 | ~~**`exercises/addsub/addsub.py` is both a config file and a legacy entry point**~~ | ~~`exercises/addsub/addsub.py`~~ | ✅ **Resolved.** `main()` and all hardcoded config constants removed. File is now a documentation stub. |
 | Q5 | ~~**`debug print()` statements in algorithm**~~ | ~~`mathrally/algorithm.py`, `addSubWritten/algorithm.py`~~ | ✅ **Resolved.** Both algorithm files now use `logging.getLogger(__name__).debug(...)`. |
 | Q19 | ~~**`RallyAlgorithm` start value ignores `min_value`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Uses `self.rng.randrange(self.min_value, max(self.min_value + 1, self.max_value))`. |
 | Q20 | ~~**`RallyAlgorithm` division produces `float`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Uses integer division `//` ensuring all intermediate chain results are `int`. |
@@ -197,7 +197,7 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | D5 | Where to define the shared `Operator` enum | ✅ | Lives in `core/operators.py`. Imported by all algorithm and template modules. |
 | D6 | Package management: `uv` vs `pip` | ✅ | Settled on `uv` as the single package manager. `pyproject.toml` is canonical with `[dependency-groups]` for dev. |
 | D7 | New exercise type structure | ✅ | All exercise types live under `exercises/<type>/`. Existing types (`mathrally`, `addsub`) moved. New types follow the same pattern. |
-| D8 | CLI parameter exposure | ❓ | Config (seed, max_value, operators) is currently hardcoded. Should CLI expose all params, or should there be a config file? |
+| D8 | CLI parameter exposure | ✅ | All exercise-specific params (`--seed`, `--min-value`, `--max-value`, `--operators`, `--num-exercises`, `--num-rows`, `--difficulty`, etc.) are now exposed as Click CLI options with sensible defaults. No external config file needed. |
 
 ---
 
@@ -220,8 +220,14 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
    - Built programmatic SVG staggered brickwork template and integrated with A4 layout engine.
    - Added `cli/zahlenmauer.py` registered in `math-trainer.py`.
    - Added unit and CLI test suite (50/50 tests passing).
-5. **Phase 4: CLI Configuration & Packaging Polish**
-   - Address remaining flags: Q2 (hardcoded config in module files), Q4 (legacy main entry in addsub), Q10 (full SVG transform matrix support), Q13 (public API docs), Q14 (type hints).
+5. ✅ **Phase 4: CLI Configuration & Packaging Polish** *(in progress)*
+   - ✅ Q2: All config params exposed as CLI options for `addsub`, `mathrally`, and `zahlenmauer`.
+   - ✅ Q4: Legacy `main()` and hardcoded config removed from `exercises/addsub/addsub.py`.
+   - ✅ D8: Settled — CLI options with defaults are the config layer, no config file needed.
+   - ✅ `math-trainer` registered as a console script entry point in `pyproject.toml`.
+   - ✅ Renamed `math-trainer.py` → `math_trainer.py` for importability.
+   - ✅ Updated README with full CLI reference for all three commands.
+   - Remaining: Q10 (full SVG transform matrix support), Q13 (public API `__init__.py` docs), Q14 (type hints).
 
 ---
 

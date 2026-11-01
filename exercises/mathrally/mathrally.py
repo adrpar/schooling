@@ -1,14 +1,13 @@
-from core.operators import Operator
+"""
+exercises/mathrally/mathrally.py — structural constants for the Math Rally exercise.
 
-TEMPLATE_PATH = "./img"
+Only the SVG template path/name constants live here now.  All tunable parameters
+(operators, min/max values, seed) are exposed as CLI options in ``cli/mathrally.py``.
+"""
+
+from pathlib import Path
+
+# Path to Inkscape-designed SVG templates (relative to repo root).
+TEMPLATE_PATH = Path(__file__).parent.parent.parent / "img"
+# Default template file name.
 TEMPLATE_NAME = "Rally1.svg"
-
-OPERATORS = [
-    Operator.ADDITION,
-    Operator.SUBTRACTION,
-    Operator.MULTIPLICATION,
-    Operator.DIVISION,
-]
-MIN_VALUE = 1
-MAX_VALUE = 100
-SEED = 7875

@@ -10,6 +10,9 @@ dependencies = [
     "lxml>=5.3.0",
 ]
 
+[project.scripts]
+math-trainer = "math_trainer:cli"
+
 [dependency-groups]
 dev = [
     "black>=26.5.1",
@@ -22,3 +25,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["core*", "exercises*", "svg*", "cli*"]
+
+[tool.setuptools]
+py-modules = ["math_trainer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

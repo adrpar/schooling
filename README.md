@@ -1,133 +1,191 @@
-# Math Trainer
+# Math Trainer — Projekt Rechenrally
 
-## CLI Tools
-
-This project provides two CLI tools: `addsub` and `mathrally`. Both tools allow generating exercises or rallies in SVG and/or PDF formats.
-
-### Common Options
-
-Both `addsub` and `mathrally` support the following common options:
-
-- `--output`: Specifies the output file name for the SVG file.
-- `--format`: Specifies the output format. Options are:
-  - `svg`: Generates only the SVG file.
-  - `pdf`: Generates only the PDF file. In this case, a temporary SVG file is created and removed after the PDF is generated.
-  - `both` (default): Generates both SVG and PDF files.
+A Python tool for generating unlimited, print-ready elementary school math exercise sheets as **SVG and PDF files**. Designed for teachers who need fresh material without manual effort.
 
 ---
 
-### `addsub` Command
+## Installation
 
-The `addsub` command generates addition and subtraction exercises.
-
-#### Usage
+Install with [uv](https://docs.astral.sh/uv/) (recommended):
 
 ```bash
-python cli/addsub.py --output <output_file> --format <format>
+uv sync
 ```
 
-#### Example
+After installation the `math-trainer` command is available inside the virtual environment:
 
-1. Generate only an SVG file:
-   ```bash
-   python cli/addsub.py --output exercises.svg --format svg
-   ```
-
-2. Generate only a PDF file:
-   ```bash
-   python cli/addsub.py --output exercises.svg --format pdf
-   ```
-
-3. Generate both SVG and PDF files:
-   ```bash
-   python cli/addsub.py --output exercises.svg --format both
-   ```
+```bash
+# Activate the venv first, or prefix all commands with .venv/bin/
+source .venv/bin/activate
+math-trainer --help
+```
 
 ---
 
-### `mathrally` Command
+## CLI Commands
 
-The `mathrally` command generates a math rally.
+All three commands share common `--output` and `--format` options and support `--seed` for reproducible sheets.
 
-#### Usage
+### Global usage
 
-```bash
-python cli/mathrally.py --output <output_file> --solution <solution_file> --format <format>
+```
+math-trainer [COMMAND] [OPTIONS]
 ```
 
-#### Example
+---
 
-1. Generate only SVG files:
-   ```bash
-   python cli/mathrally.py --output rally.svg --solution solution.svg --format svg
-   ```
+### `addsub` — Written Addition / Subtraction (Schriftliche Rechnung)
 
-2. Generate only PDF files:
-   ```bash
-   python cli/mathrally.py --output rally.svg --solution solution.svg --format pdf
-   ```
+Generates column-style written arithmetic worksheets on an A4 page.
 
-3. Generate both SVG and PDF files:
-   ```bash
-   python cli/mathrally.py --output rally.svg --solution solution.svg --format both
-   ```
+```bash
+math-trainer addsub [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output TEXT` | `addsub.svg` | Output SVG file name |
+| `--format [svg\|pdf\|both]` | `both` | Output format |
+| `--num-exercises INT` | `20` | Number of exercises per sheet |
+| `--num-rows INT` | `2` | Operand rows per exercise (2 = standard addition/subtraction) |
+| `--min-value INT` | `1` | Minimum operand value |
+| `--max-value INT` | `9999` | Maximum operand / result value |
+| `--operators TEXT` | `+-` | Operators as symbols, e.g. `+-`, `+*`, `+-*/` |
+| `--seed INT` | *(random)* | Seed for reproducible output |
+
+#### Examples
+
+```bash
+# 20 mixed add/sub exercises up to 999, PDF + SVG
+math-trainer addsub --max-value 999 --format both --output sheet.svg
+
+# 10 addition-only exercises, fixed seed for reproducibility
+math-trainer addsub --num-exercises 10 --operators + --seed 42 --format svg
+
+# Hard mixed sheet with all four operations
+math-trainer addsub --operators "+-*/" --max-value 100 --num-rows 3
+```
+
+---
+
+### `mathrally` — Math Rally (Rechenrally)
+
+Generates a chain-calculation exercise (student sheet + solution sheet) from an Inkscape SVG template.
+
+```bash
+math-trainer mathrally [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output TEXT` | `rally.svg` | Output SVG for the student sheet |
+| `--solution TEXT` | `rally_solution.svg` | Output SVG for the solution sheet |
+| `--template TEXT` | `Rally1.svg` | Template file name or path (from `img/` or full path) |
+| `--format [svg\|pdf\|both]` | `both` | Output format |
+| `--min-value INT` | `1` | Minimum intermediate value in the chain |
+| `--max-value INT` | `100` | Maximum intermediate value in the chain |
+| `--operators TEXT` | `+-*/` | Operators as symbols, e.g. `+-`, `+*`, `+-*/` |
+| `--seed INT` | *(random)* | Seed for reproducible output |
+
+#### Examples
+
+```bash
+# Default rally (all four operators, Rally1.svg template)
+math-trainer mathrally
+
+# Addition/subtraction only, values 1–50, fixed seed
+math-trainer mathrally --operators +- --max-value 50 --seed 123
+
+# Use alternate template, SVG only
+math-trainer mathrally --template Rally2.svg --format svg --output rally2.svg --solution rally2_sol.svg
+```
+
+---
+
+### `zahlenmauer` — Number Wall / Addition Pyramid (Zahlenmauer)
+
+Generates addition pyramid exercise sheets (student sheet + solution sheet).
+
+```bash
+math-trainer zahlenmauer [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--output TEXT` | `zahlenmauer.svg` | Output SVG for the student sheet |
+| `--solution TEXT` | `zahlenmauer_solution.svg` | Output SVG for the solution sheet |
+| `--format [svg\|pdf\|both]` | `both` | Output format |
+| `--base-size INT` | `4` | Bricks at the bottom row (3–10) |
+| `--difficulty [easy\|medium\|hard]` | `medium` | How many bricks are revealed as clues |
+| `--min-value INT` | `1` | Minimum base brick value |
+| `--max-value INT` | *(auto)* | Maximum apex value; defaults to `max(100, 2^(base-1) * 10)` |
+| `--num-pyramids INT` | *(auto)* | Pyramids per sheet; defaults to optimal count for `--base-size` |
+| `--seed INT` | *(random)* | Seed for reproducible output |
+
+#### Examples
+
+```bash
+# Default sheet: 4-brick base, medium difficulty
+math-trainer zahlenmauer
+
+# Large easy pyramid with fixed seed
+math-trainer zahlenmauer --base-size 6 --difficulty easy --seed 99
+
+# Small hard pyramid, SVG only
+math-trainer zahlenmauer --base-size 3 --difficulty hard --format svg
+```
 
 ---
 
 ## Prerequisites
 
-This project requires **Inkscape** for rendering SVG files to PDF. Ensure that Inkscape is installed and accessible via the command line.
+This project requires **Inkscape** for SVG → PDF rendering.
 
-### Installing Inkscape CLI
+### Installing Inkscape
 
-1. **Download and Install Inkscape**:
-   - Visit the [Inkscape download page](https://inkscape.org/release/) and download the appropriate version for your operating system.
-   - Follow the installation instructions for your platform.
-
-2. **Verify Installation**:
-   - Open a terminal or command prompt and run:
+1. Download from [inkscape.org](https://inkscape.org/release/).
+2. Verify the installation:
+   ```bash
+   inkscape --version
+   ```
+3. If the command is not found, add Inkscape to your `PATH`:
+   - **macOS**: Add to `~/.zshrc`:
      ```bash
-     inkscape --version
+     export PATH="/Applications/Inkscape.app/Contents/MacOS:$PATH"
      ```
-   - This should output the installed version of Inkscape. If the command is not recognized, ensure that Inkscape is added to your system's PATH.
-
-3. **Add Inkscape to PATH (if necessary)**:
-   - **Windows**:
-     - Open the Start menu and search for "Environment Variables."
-     - Edit the `Path` variable in the system variables section and add the directory where `inkscape.exe` is located (e.g., `C:\Program Files\Inkscape`).
-   - **macOS/Linux**:
-     - Add the Inkscape binary directory to your PATH. For example, add the following line to your `~/.bashrc` or `~/.zshrc` file:
-       ```bash
-       export PATH="/Applications/Inkscape.app/Contents/MacOS:$PATH"
-       ```
-     - Reload your shell configuration:
-       ```bash
-       source ~/.bashrc  # or source ~/.zshrc
-       ```
-
-4. **Test Again**:
-   - Run `inkscape --version` to confirm that Inkscape is properly installed and accessible.
+   - **Windows**: Add the Inkscape install directory to the system `Path` variable.
 
 ---
 
-### Troubleshooting
+## Developer Guide
 
-- If you encounter issues, refer to the [Inkscape documentation](https://inkscape.org/doc/) or check the [FAQs](https://inkscape.org/learn/faq/).
+### Running Tests
 
----
-
-# Developer Guide
-
-## Running Tests
-
-To run the tests with pytest, use the following command:
-
-```sh
+```bash
 pytest
+# or via uv:
+uv run pytest
 ```
 
-Make sure you have pytest installed. You can install it using pip:
+### Code Formatting
 
-```sh
-pip install pytest
+```bash
+uv run black .
+```
+
+### Project Structure
+
+```
+Projekt Rechenrally/
+├── img/                  # Inkscape SVG templates (Rally1.svg, Rally2.svg)
+├── core/                 # Shared domain types (Operator enum)
+├── exercises/
+│   ├── addsub/           # Written add/sub exercise
+│   ├── mathrally/        # Math Rally chain exercise
+│   └── zahlenmauer/      # Addition Pyramid exercise
+├── svg/                  # Shared SVG utilities (layout, styles, cell renderers)
+│   └── number_paper/     # Grid cell + written calculation box
+├── cli/                  # Click CLI entry points
+├── math_trainer.py       # Root CLI dispatcher (math-trainer command)
+└── tests/                # pytest test suite
 ```
