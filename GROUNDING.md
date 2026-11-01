@@ -34,18 +34,19 @@ Projekt Rechenrally/
 ├── svg/                  # Shared SVG utilities (file I/O, layout engine, grid cells)
 │   └── number_paper/     # Number-paper grid cells + written calculation box
 ├── cli/                  # Click CLI entry points (mathrally.py, addsub.py, zahlenmauer.py)
-└── tests/                # pytest suite
+├── math_trainer.py       # Root CLI dispatcher — registers all sub-commands as `math-trainer`
+└── tests/                # pytest suite (67 tests)
 ```
 
 ### Packages & dependency flow
 
 ```
-cli/mathrally.py    ─→  exercises/mathrally/    ─→  svg/
-                                                └── core/
-cli/addsub.py       ─→  exercises/addsub/       ─→  svg/
-                                                │   └── number_paper/
-                                                └── core/
-cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
+math_trainer.py     ─→  cli/mathrally.py    ─→  exercises/mathrally/    ─→  svg/
+                    │                                                    └── core/
+                    ├── cli/addsub.py       ─→  exercises/addsub/       ─→  svg/
+                    │                                                   │   └── number_paper/
+                    │                                                   └── core/
+                    └── cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 ```
 
 ---
@@ -58,8 +59,8 @@ cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 | Component | File | Role |
 |-----------|------|------|
 | Algorithm | `exercises/mathrally/algorithm.py` | Generates a random chain of operations with seeded RNG. Validates no trivial cancellations and results stay in `[min, max]`. |
-| Config | `exercises/mathrally/mathrally.py` | Hardcoded default params (operators, min/max, seed, template path). |
-| Template | `exercises/mathrally/template.py` | Loads `img/Rally1.svg`, injects values/operators into SVG text elements by ID convention (`value.N`, `operatorText.N`). |
+| Structural constants | `exercises/mathrally/mathrally.py` | `TEMPLATE_PATH` and `TEMPLATE_NAME` only. All tunable params are CLI options. |
+| Template | `exercises/mathrally/template.py` | Loads an Inkscape SVG (default: `img/Rally1.svg`), injects values/operators into SVG text elements by ID convention (`value.N`, `operatorText.N`). Inherits from `CanvasExerciseTemplate`. |
 | SVG templates | `img/Rally1.svg`, `img/Rally2.svg` | Inkscape-designed A4 layouts. IDs like `value.0`…`value.9` are the injection targets. |
 
 **Architecture pattern:** "Template injection" — an Inkscape file holds the visual layout; Python finds elements by ID and sets their `.text`.
@@ -70,10 +71,9 @@ cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 | Component | File | Role |
 |-----------|------|------|
 | Algorithm | `exercises/addsub/algorithm.py` | Generates N exercises, each with M operand rows. Ensures no negative results for subtraction. |
-| Config | `exercises/addsub/addsub.py` | Hardcoded params (operators, min/max, seed, num_exercises, num_rows). Also contains a `main()` entry point (legacy). |
-| Template | `exercises/addsub/template.py` | Loads `exercises/addsub/drawing.svg` (A4 blank), generates `WrittenCalcExerciseBox` SVG groups, distributes them on the page. Uses `pathlib` for robust path resolution. |
-| SVG blank | `exercises/addsub/drawing.svg` | A4 page with a `drawingArea` rect where exercises are placed. |
-| Cell renderer | `svg/number_paper/paper_cell.py` | `NumericalPaperCell` — one grid square: a `<rect>` + `<text>/<tspan>`. Renders digits or operators. Template is an inline SVG string. |
+| Legacy stub | `exercises/addsub/addsub.py` | Documentation stub only — `main()` and all config constants removed. Kept to avoid accidental import breaks. |
+| Template | `exercises/addsub/template.py` | Creates a blank A4 canvas programmatically (via `CanvasExerciseTemplate`), generates `WrittenCalcExerciseBox` SVG groups, distributes them on the page. |
+| Cell renderer | `svg/number_paper/paper_cell.py` | `NumericalPaperCell` — one grid square built from programmatic `lxml.etree` prototypes with `text-anchor: middle` centering. |
 ### 3.3 Zahlenmauer (`exercises/zahlenmauer/`)
 **What it is:** Addition Pyramids / Number Walls (Zahlenmauer / Rechenmauer) — classic elementary school math puzzles where each brick is the sum of the two bricks directly underneath it. Features configurable base size, difficulty levels (`easy`, `medium`, `hard`), and guaranteed solvability verification via student-deduction simulation. Generates both student sheets (with blanks) and solution sheets (answers highlighted).
 
@@ -111,13 +111,17 @@ cli/zahlenmauer.py  ─→  exercises/zahlenmauer/  ─→  svg/
 
 ## 5. CLI Layer (`cli/`)
 
-All commands use **Click**. Common options: `--output`, `--format` (`svg`/`pdf`/`both`).
+All commands use **Click** and are registered under the `math-trainer` console script (entry point in `pyproject.toml` → `math_trainer:cli`).
 
-- `cli/mathrally.py` → `mathrally` command (imports from `exercises.mathrally`)
-- `cli/addsub.py` → `addsub` command (imports from `exercises.addsub`)
-- `cli/zahlenmauer.py` → `zahlenmauer` command (imports from `exercises.zahlenmauer`)
+Common options on all commands: `--output`, `--format` (`svg`/`pdf`/`both`), `--seed`.
 
-PDF export: Inkscape is invoked via `inkex.command.inkscape()`. A temp SVG is written when `--format pdf` is requested without SVG output.
+| Command | File | Key options |
+|---------|------|-------------|
+| `addsub` | `cli/addsub.py` | `--num-exercises`, `--num-rows`, `--min-value`, `--max-value`, `--operators` |
+| `mathrally` | `cli/mathrally.py` | `--solution`, `--template`, `--min-value`, `--max-value`, `--operators` |
+| `zahlenmauer` | `cli/zahlenmauer.py` | `--solution`, `--base-size`, `--difficulty`, `--min-value`, `--max-value`, `--num-pyramids` |
+
+PDF export: Inkscape is invoked via `inkex.command.inkscape()`. A temp SVG is written when `--format pdf` is requested without an explicit SVG output file.
 
 ---
 
@@ -146,9 +150,9 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | # | Issue | Location | Notes |
 |---|-------|----------|-------|
 | Q1 | ~~**Duplicated `Operator` enum**~~ | ~~`mathrally/algorithm.py` and `addSubWritten/algorithm.py`~~ | ✅ **Resolved.** Canonical `Operator` now lives in `core/operators.py` and is imported everywhere. |
-| Q2 | **Hardcoded config mixed into module files** | `exercises/addsub/addsub.py`, `exercises/mathrally/mathrally.py` | Config constants (`SEED`, `MAX_VALUE`, etc.) are module-level globals in non-config files. Move to a proper config layer or CLI defaults. |
+| Q2 | ~~**Hardcoded config mixed into module files**~~ | ~~`exercises/addsub/addsub.py`, `exercises/mathrally/mathrally.py`~~ | ✅ **Resolved.** All tunable parameters (`SEED`, `MAX_VALUE`, `OPERATORS`, etc.) are now exposed as CLI options with documented defaults. Module files contain only structural constants. |
 | Q3 | ~~**Template path hardcoded as relative string**~~ | ~~`addSubWritten/template.py` L16~~ | ✅ **Resolved.** `exercises/addsub/template.py` now uses `pathlib.Path(__file__).parent / "drawing.svg"`. |
-| Q4 | **`exercises/addsub/addsub.py` is both a config file and a legacy entry point** | `exercises/addsub/addsub.py` | Dead imports have been removed. `main()` kept for compatibility — can be removed separately. |
+| Q4 | ~~**`exercises/addsub/addsub.py` is both a config file and a legacy entry point**~~ | ~~`exercises/addsub/addsub.py`~~ | ✅ **Resolved.** `main()` and all hardcoded config constants removed. File is now a documentation stub. |
 | Q5 | ~~**`debug print()` statements in algorithm**~~ | ~~`mathrally/algorithm.py`, `addSubWritten/algorithm.py`~~ | ✅ **Resolved.** Both algorithm files now use `logging.getLogger(__name__).debug(...)`. |
 | Q19 | ~~**`RallyAlgorithm` start value ignores `min_value`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Uses `self.rng.randrange(self.min_value, max(self.min_value + 1, self.max_value))`. |
 | Q20 | ~~**`RallyAlgorithm` division produces `float`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Uses integer division `//` ensuring all intermediate chain results are `int`. |
@@ -179,8 +183,8 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | # | Issue | Location | Notes |
 |---|-------|----------|-------|
 | Q14 | **No type hints** | All modules | The codebase would benefit from type annotations for maintainability. |
-| Q15 | **`_set_text(element, text)` uses `element[0]`** | `mathrally/template.py` L117 | Indexing a dict value with `[0]` is fragile — the dict value is a single element, not a list. Either rename or fix. |
-| Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms and SVG components; full suite now 38 tests. |
+| Q15 | ~~**`_set_text(element, text)` uses `element[0]`**~~ | ~~`mathrally/template.py`~~ | ✅ **Resolved** (implicitly via refactoring). The old `_set_text` method was removed during the `RallyTemplate` refactor. |
+| Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms and SVG components; full suite now **67 tests**. |
 | Q17 | ~~**Output SVG files checked into root**~~ | ~~Root~~ | ✅ **Resolved.** `.gitignore` ignores generated `*.svg`, `*.pdf`, and `output.png` while preserving template SVGs. |
 | Q18 | ~~**Inline SVG string template in `paper_cell.py`**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Replaced by clean programmatic `lxml.etree` element creation. |
 
@@ -197,7 +201,7 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | D5 | Where to define the shared `Operator` enum | ✅ | Lives in `core/operators.py`. Imported by all algorithm and template modules. |
 | D6 | Package management: `uv` vs `pip` | ✅ | Settled on `uv` as the single package manager. `pyproject.toml` is canonical with `[dependency-groups]` for dev. |
 | D7 | New exercise type structure | ✅ | All exercise types live under `exercises/<type>/`. Existing types (`mathrally`, `addsub`) moved. New types follow the same pattern. |
-| D8 | CLI parameter exposure | ❓ | Config (seed, max_value, operators) is currently hardcoded. Should CLI expose all params, or should there be a config file? |
+| D8 | CLI parameter exposure | ✅ | All exercise-specific params (`--seed`, `--min-value`, `--max-value`, `--operators`, `--num-exercises`, `--num-rows`, `--difficulty`, etc.) are now exposed as Click CLI options with sensible defaults. No external config file needed. |
 
 ---
 
@@ -218,10 +222,21 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
    - Added `exercises/zahlenmauer/` with `Difficulty` enum (`easy`, `medium`, `hard`).
    - Implemented full pyramid generator, deduction-based solvability solver, and difficulty-guided masking.
    - Built programmatic SVG staggered brickwork template and integrated with A4 layout engine.
-   - Added `cli/zahlenmauer.py` registered in `math-trainer.py`.
-   - Added unit and CLI test suite (50/50 tests passing).
-5. **Phase 4: CLI Configuration & Packaging Polish**
-   - Address remaining flags: Q2 (hardcoded config in module files), Q4 (legacy main entry in addsub), Q10 (full SVG transform matrix support), Q13 (public API docs), Q14 (type hints).
+   - Added `cli/zahlenmauer.py` registered in `math_trainer.py`.
+   - Added unit and CLI test suite (67/67 tests passing after Phase 4).
+5. ✅ **Phase 4: CLI Configuration & Packaging Polish**
+   - ✅ Q2: All tunable params (`--seed`, `--min-value`, `--max-value`, `--operators`, `--num-exercises`, `--num-rows`, `--difficulty`, etc.) exposed as Click CLI options.
+   - ✅ Q4: Legacy `main()` and hardcoded config constants removed from `exercises/addsub/addsub.py`.
+   - ✅ Q15: `_set_text()` confirmed removed (implicitly resolved during `RallyTemplate` refactor).
+   - ✅ D8: Settled — CLI options with documented defaults are the config layer; no config file needed.
+   - ✅ `math-trainer` registered as a `[project.scripts]` console entry point in `pyproject.toml`.
+   - ✅ Renamed `math-trainer.py` → `math_trainer.py` for Python importability.
+   - ✅ README fully rewritten: option tables and examples for all three commands.
+   - ✅ All 67 tests passing.
+6. **Phase 5: Code Quality — Type Hints & API Documentation**
+   - Q10: Full SVG transform matrix support in `calculate_group_dimensions` (`rotate`, `scale`, `matrix`).
+   - Q13: Document public API in `exercises/*/` `__init__.py` files.
+   - Q14: Add type annotations across `exercises/`, `svg/`, `cli/` and wire up `mypy`/`pyright` in CI.
 
 ---
 
