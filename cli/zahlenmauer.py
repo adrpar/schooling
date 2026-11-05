@@ -81,7 +81,8 @@ def zahlenmauer(
     min_value: int,
     num_pyramids: Optional[int],
     seed: Optional[int],
-):
+) -> None:
+
     """Generate Zahlenmauer (Addition Pyramid) exercise sheets."""
     if max_value is None:
         max_value = max(100, (2 ** (base_size - 1)) * 10)

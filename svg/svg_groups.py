@@ -1,14 +1,20 @@
 import logging
+import math
 import re
+from typing import Any, Optional
+import lxml.etree as ET
+from inkex.transforms import Transform
 
 logger = logging.getLogger(__name__)
 
 
-def _element_bbox(element, offset_x=0.0, offset_y=0.0):
+def _primitive_bbox(
+    element: Any, transform: Transform
+) -> tuple[float, float, float, float]:
     """
-    Returns (min_x, min_y, max_x, max_y) for a single non-group SVG element,
-    relative to the given offset. Handles rect, line, circle, ellipse, and
-    falls back to x/y/width/height for unknown elements. (Q27)
+    Returns (min_x, min_y, max_x, max_y) for a single non-group SVG element
+    transformed by the given affine transform. Handles rect, line, circle,
+    ellipse, polygon, polyline, and falls back to x/y/width/height for unknown elements.
     """
     tag = element.tag.split("}")[-1] if "}" in element.tag else element.tag
 
@@ -17,90 +23,126 @@ def _element_bbox(element, offset_x=0.0, offset_y=0.0):
         y1 = float(element.attrib.get("y1", 0))
         x2 = float(element.attrib.get("x2", 0))
         y2 = float(element.attrib.get("y2", 0))
+        p1 = transform.apply_to_point((x1, y1))
+        p2 = transform.apply_to_point((x2, y2))
+        return (min(p1.x, p2.x), min(p1.y, p2.y), max(p1.x, p2.x), max(p1.y, p2.y))
+
+    elif tag in ("circle", "ellipse"):
+        cx = float(element.attrib.get("cx", 0))
+        cy = float(element.attrib.get("cy", 0))
+        rx = float(element.attrib.get("r" if tag == "circle" else "rx", 0))
+        ry = float(element.attrib.get("r" if tag == "circle" else "ry", 0))
+        center = transform.apply_to_point((cx, cy))
+        half_w = math.hypot(transform.a * rx, transform.c * ry)
+        half_h = math.hypot(transform.b * rx, transform.d * ry)
         return (
-            offset_x + min(x1, x2),
-            offset_y + min(y1, y2),
-            offset_x + max(x1, x2),
-            offset_y + max(y1, y2),
+            center.x - half_w,
+            center.y - half_h,
+            center.x + half_w,
+            center.y + half_h,
         )
-    elif tag == "circle":
-        cx = float(element.attrib.get("cx", 0))
-        cy = float(element.attrib.get("cy", 0))
-        r = float(element.attrib.get("r", 0))
-        return (offset_x + cx - r, offset_y + cy - r, offset_x + cx + r, offset_y + cy + r)
-    elif tag == "ellipse":
-        cx = float(element.attrib.get("cx", 0))
-        cy = float(element.attrib.get("cy", 0))
-        rx = float(element.attrib.get("rx", 0))
-        ry = float(element.attrib.get("ry", 0))
-        return (offset_x + cx - rx, offset_y + cy - ry, offset_x + cx + rx, offset_y + cy + ry)
+
+    elif tag in ("polygon", "polyline"):
+        pts_str = element.attrib.get("points", "").strip()
+        if pts_str:
+            coords = [float(val) for val in re.split(r"[\s,]+", pts_str) if val]
+            pts = [
+                transform.apply_to_point((coords[i], coords[i + 1]))
+                for i in range(0, len(coords) - 1, 2)
+            ]
+            if pts:
+                xs = [p.x for p in pts]
+                ys = [p.y for p in pts]
+                return (min(xs), min(ys), max(xs), max(ys))
+        return (0.0, 0.0, 0.0, 0.0)
+
     else:
-        # rect, text, image, and unknowns
-        x = offset_x + float(element.attrib.get("x", 0))
-        y = offset_y + float(element.attrib.get("y", 0))
+        # rect, text, image, and generic bounding boxes
+        x = float(element.attrib.get("x", 0))
+        y = float(element.attrib.get("y", 0))
         w = float(element.attrib.get("width", 0))
         h = float(element.attrib.get("height", 0))
-        return (x, y, x + w, y + h)
+        c1 = transform.apply_to_point((x, y))
+        c2 = transform.apply_to_point((x + w, y))
+        c3 = transform.apply_to_point((x + w, y + h))
+        c4 = transform.apply_to_point((x, y + h))
+        xs = [c1.x, c2.x, c3.x, c4.x]
+        ys = [c1.y, c2.y, c3.y, c4.y]
+        return (min(xs), min(ys), max(xs), max(ys))
 
 
-def calculate_group_dimensions(group):
+def calculate_group_dimensions(group: Any) -> dict[str, float]:
     """
     Recursively calculates the bounding box dimensions of a group element,
-    considering nested groups and child elements.
+    considering nested groups, child elements, and SVG affine transforms
+    (translate, rotate, scale, matrix, skew).
 
     :param group: lxml element representing the <g> group node.
     :return: Dictionary with 'width' and 'height' of the group.
     """
     if not len(group):
-        return {"width": 0, "height": 0}
+        return {"width": 0.0, "height": 0.0}
 
-    min_x, min_y, max_x, max_y = float("inf"), float("inf"), float("-inf"), float("-inf")
-    group_x, group_y = parse_transform(group.get("transform"))
+    bounds = [float("inf"), float("inf"), float("-inf"), float("-inf")]
+    initial_transform = Transform(group.get("transform"))
 
-    for element in group.iterchildren():
-        if element.tag.endswith("g"):
-            dims = calculate_group_dimensions(element)
-            child_x, child_y = parse_transform(element.attrib.get("transform"))
-            x = group_x + child_x
-            y = group_y + child_y
-            min_x = min(min_x, x)
-            min_y = min(min_y, y)
-            max_x = max(max_x, x + dims["width"])
-            max_y = max(max_y, y + dims["height"])
-        else:
-            ex1, ey1, ex2, ey2 = _element_bbox(element, group_x, group_y)
-            min_x = min(min_x, ex1)
-            min_y = min(min_y, ey1)
-            max_x = max(max_x, ex2)
-            max_y = max(max_y, ey2)
+    def _traverse(node: Any, current_transform: Transform) -> None:
+        for child in node.iterchildren():
+            child_tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+            child_transform = current_transform
+            if "transform" in child.attrib:
+                child_transform = child_transform @ Transform(child.attrib["transform"])
 
+            if child_tag == "g":
+                _traverse(child, child_transform)
+            else:
+                x1, y1, x2, y2 = _primitive_bbox(child, child_transform)
+                bounds[0] = min(bounds[0], x1)
+                bounds[1] = min(bounds[1], y1)
+                bounds[2] = max(bounds[2], x2)
+                bounds[3] = max(bounds[3], y2)
+
+    _traverse(group, initial_transform)
+
+    if bounds[0] == float("inf"):
+        return {"width": 0.0, "height": 0.0}
+
+    width = max(0.0, bounds[2] - bounds[0])
+    height = max(0.0, bounds[3] - bounds[1])
     return {
-        "width": max_x - min_x if max_x > min_x else 0,
-        "height": max_y - min_y if max_y > min_y else 0,
+        "width": width,
+        "height": height,
     }
 
 
-def parse_transform(transform):
-    """Extracts translation values from the transform attribute."""
+def parse_transform(transform: Optional[str]) -> tuple[float, float]:
+    """
+    Extracts translation (x, y) values from any transform attribute,
+    supporting translate, matrix, and composite transforms.
+    """
     if transform:
-        match = re.search(r"translate\(([-\d.]+)[, ]*([-\d.]+)?\)", transform)
-        if match:
-            x = float(match.group(1))
-            y = float(match.group(2)) if match.group(2) else 0
-            return x, y
-    return 0, 0
+        try:
+            t = Transform(transform)
+            return float(t.e), float(t.f)
+        except Exception:
+            match = re.search(r"translate\(([-\d.]+)[, ]*([-\d.]+)?\)", transform)
+            if match:
+                x = float(match.group(1))
+                y = float(match.group(2)) if match.group(2) else 0.0
+                return x, y
+    return 0.0, 0.0
 
 
 def _flush_row(
-    row_elements,
-    row_bboxes,
-    current_y,
-    drawing_box_origin_x,
-    drawing_box_width,
-    drawing_area_group,
+    row_elements: list[Any],
+    row_bboxes: list[tuple[Any, float, float]],
+    current_y: float,
+    drawing_box_origin_x: float,
+    drawing_box_width: float,
+    drawing_area_group: Any,
     center_single: bool = True,
-    max_gap: float = None,
-):
+    max_gap: Optional[float] = None,
+) -> None:
     """
     Spaces and appends a completed row of elements to the drawing area group.
     - Single elements are centered horizontally by default.
@@ -134,14 +176,18 @@ def _flush_row(
 
 
 def distribute_groups_in_drawing_area(
-    group_list,
-    drawing_area,
-    drawing_area_group,
+    group_list: list[Any],
+    drawing_area: Any,
+    drawing_area_group: Any,
     row_spacing: float = 10.0,
     center_single: bool = True,
-    max_gap: float = None,
+    max_gap: Optional[float] = None,
     center_vertical: bool = False,
-):
+) -> None:
+    """
+    Arranges a sequence of group elements in the designated drawing area, wrapping
+    rows as needed.
+    """
     drawing_box_origin_x = float(drawing_area.attrib["x"])
     drawing_box_origin_y = float(drawing_area.attrib["y"])
     drawing_box_width = float(drawing_area.attrib["width"])
@@ -150,8 +196,8 @@ def distribute_groups_in_drawing_area(
     current_x = drawing_box_origin_x
     current_y = drawing_box_origin_y
     row_height = 0.0
-    row_elements = []
-    row_bboxes = []  # list of (element, width, height)
+    row_elements: list[Any] = []
+    row_bboxes: list[tuple[Any, float, float]] = []
 
     for exercise in group_list:
         dims = calculate_group_dimensions(exercise)

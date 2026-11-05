@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from svg.number_paper.paper_cell import NumericalPaperCell
 from svg.svg_handler import NAMESPACE_MAP, SvgElement
@@ -17,10 +17,11 @@ class WrittenCalcExerciseBox:
 
     def __init__(
         self,
-        operation,
+        operation: Any,
         values: list[int],
         exercise_number: Optional[int] = None,
-    ):
+    ) -> None:
+
         self.operation = operation
         self.values = values
         self.exercise_number = exercise_number
@@ -51,15 +52,19 @@ class WrittenCalcExerciseBox:
         return return_element
 
 
-    def _add_box_matrix(self, node: SvgElement, values, num_x, num_y):
+    def _add_box_matrix(
+        self, node: SvgElement, values: list[int], num_x: int, num_y: int
+    ) -> None:
+
         number_box = NumericalPaperCell(0)
 
         box_rect = number_box.rect
+        assert box_rect is not None
 
         box_width = float(box_rect.attrib["width"])
         box_height = float(box_rect.attrib["height"])
 
-        total_matrix_width = 0
+        total_matrix_width: float = 0.0
 
         for j in range(num_y):
             current_value = self.values[j] if j < len(self.values) else ""
@@ -125,12 +130,13 @@ class WrittenCalcExerciseBox:
     def _draw_line(
         self,
         svg_root: SvgElement,
-        origin_x,
-        origin_y,
-        target_x,
-        target_y,
-        line_type="single",
-    ):
+        origin_x: float,
+        origin_y: float,
+        target_x: float,
+        target_y: float,
+        line_type: str = "single",
+    ) -> None:
+
         """
         Draws a single or double stroke line in an SVG.
         """

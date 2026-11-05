@@ -87,7 +87,8 @@ def addsub(
     max_value: int,
     operators: str,
     seed: Optional[int],
-):
+) -> None:
+
     """Generate written addition/subtraction (Schriftliche Rechnung) exercise sheets."""
     if min_value >= max_value:
         raise click.BadParameter(

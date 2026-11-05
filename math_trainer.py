@@ -4,9 +4,10 @@ from pathlib import Path
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """CLI tool for math rally and add/sub operations."""
     pass
+
 
 
 # Check if the 'cli' directory exists

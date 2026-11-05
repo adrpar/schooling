@@ -44,6 +44,38 @@ class TestSvgGroups(unittest.TestCase):
         self.assertEqual(dimensions["width"], 100, "Incorrect width calculated.")
         self.assertEqual(dimensions["height"], 30, "Incorrect height calculated.")
 
+    def test_calculate_group_dimensions_with_scale(self):
+        svg = '<g transform="scale(2, 3)"><rect x="0" y="0" width="50" height="30"/></g>'
+        dims = calculate_group_dimensions(ET.fromstring(svg))
+        self.assertAlmostEqual(dims["width"], 100.0)
+        self.assertAlmostEqual(dims["height"], 90.0)
+
+    def test_calculate_group_dimensions_with_rotate(self):
+        # 50x30 rect rotated 90 degrees around origin
+        svg = '<g transform="rotate(90)"><rect x="0" y="0" width="50" height="30"/></g>'
+        dims = calculate_group_dimensions(ET.fromstring(svg))
+        self.assertAlmostEqual(dims["width"], 30.0)
+        self.assertAlmostEqual(dims["height"], 50.0)
+
+    def test_calculate_group_dimensions_with_matrix(self):
+        # matrix(sx, 0, 0, sy, tx, ty) with sx=2, sy=1.5
+        svg = '<g transform="matrix(2, 0, 0, 1.5, 10, 20)"><rect x="0" y="0" width="40" height="20"/></g>'
+        dims = calculate_group_dimensions(ET.fromstring(svg))
+        self.assertAlmostEqual(dims["width"], 80.0)
+        self.assertAlmostEqual(dims["height"], 30.0)
+
+    def test_calculate_group_dimensions_nested_transforms(self):
+        svg = '''
+        <g transform="translate(10, 10)">
+            <g transform="scale(2)">
+                <rect x="0" y="0" width="25" height="15"/>
+            </g>
+        </g>
+        '''
+        dims = calculate_group_dimensions(ET.fromstring(svg))
+        self.assertAlmostEqual(dims["width"], 50.0)
+        self.assertAlmostEqual(dims["height"], 30.0)
+
     def test_distribute_groups_in_drawing_area(self):
         drawing_area = ET.Element("rect", x="0", y="0", width="200", height="100")
         drawing_area_group = ET.Element("g")

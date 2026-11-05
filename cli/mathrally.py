@@ -90,7 +90,8 @@ def mathrally(
     max_value: int,
     operators: str,
     seed: Optional[int],
-):
+) -> None:
+
     """Generate a Math Rally (Rechenrally) chain-calculation exercise sheet."""
     if min_value >= max_value:
         raise click.BadParameter(
