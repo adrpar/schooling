@@ -1,7 +1,7 @@
 import logging
 import math
 from random import Random
-from typing import NamedTuple, Optional
+from typing import Iterator, NamedTuple, Optional
 
 from exercises.zahlenmauer.difficulty import Difficulty
 
@@ -77,8 +77,9 @@ class ZahlenmauerSolver:
         is_solved = len(self.grid) == total_cells
         return is_solved, self.history
 
-    def _iter_triads(self):
+    def _iter_triads(self) -> Iterator[tuple[Cell, Cell, Cell]]:
         """Yields (parent, left_child, right_child) for every brick triad in the wall."""
+
         for r in range(1, self.base_size):
             for c in range(self.base_size - r):
                 yield (r, c), (r - 1, c), (r - 1, c + 1)

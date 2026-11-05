@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from core.operators import Operator
 from exercises.utils import operator_to_string
@@ -28,7 +28,8 @@ class RallyTemplate(CanvasExerciseTemplate):
     VALUE_ID_PREFIX = "value"
     OPERATOR_TEXT_ID_PREFIX = "operatorText"
 
-    def __init__(self, file_name: Union[str, Path]):
+    def __init__(self, file_name: Union[str, Path]) -> None:
+
         self.file_name = file_name
         super().__init__(file_name)
         # Retain backward-compatible references
@@ -53,7 +54,7 @@ class RallyTemplate(CanvasExerciseTemplate):
         self.num_operators = len(self.operator_elements.keys())
         self.num_value_elements = len(self.value_elements.keys())
 
-    def _validate_assumptions(self):
+    def _validate_assumptions(self) -> None:
         operator_ids = [int(key.split(".")[1]) for key in self.operator_elements.keys()]
         operator_ids = sorted(operator_ids)
         if not all([i == id for i, id in enumerate(operator_ids)]):
@@ -81,8 +82,13 @@ class RallyTemplate(CanvasExerciseTemplate):
             raise ValueError("Title does not contain expected tspans")
 
     def _format_value_element(
-        self, text_elem, val_text: str, is_solution: bool = False, is_start: bool = False
-    ):
+        self,
+        text_elem: Any,
+        val_text: str,
+        is_solution: bool = False,
+        is_start: bool = False,
+    ) -> None:
+
         """Cleanly center and style value boxes using generic SVG centering and font scaling."""
         if len(text_elem) > 0:
             text_elem[0].text = str(val_text) if val_text else ""
@@ -123,7 +129,7 @@ class RallyTemplate(CanvasExerciseTemplate):
         if is_solved_val and rect is not None:
             highlight_solution_box(rect, text_elem)
 
-    def _format_operator_element(self, text_elem, op_text: str):
+    def _format_operator_element(self, text_elem: Any, op_text: str) -> None:
         """Cleanly center and style operator circles using generic circle centering."""
         if len(text_elem) > 0:
             text_elem[0].text = str(op_text)
@@ -160,7 +166,13 @@ class RallyTemplate(CanvasExerciseTemplate):
         for child in text_elem:
             child.attrib["style"] = style
 
-    def create_new_rally(self, algorithm_results, filename_rally, filename_solution):
+    def create_new_rally(
+        self,
+        algorithm_results: Any,
+        filename_rally: Union[str, Path],
+        filename_solution: Optional[Union[str, Path]] = None,
+    ) -> None:
+
         solution_copy = RallyTemplate(self.file_name)
         rally_copy = RallyTemplate(self.file_name)
 
@@ -215,5 +227,7 @@ class RallyTemplate(CanvasExerciseTemplate):
                     operator_text,
                 )
 
-        solution_copy.write(filename_solution)
+        if filename_solution is not None:
+            solution_copy.write(filename_solution)
         rally_copy.write(filename_rally)
+

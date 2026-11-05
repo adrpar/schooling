@@ -16,15 +16,23 @@ class RallyStep(NamedTuple):
 
 
 class RallyAlgorithm:
-    def __init__(self, operator_list, min_value, max_value, num_operators, rand_seed):
+    def __init__(
+        self,
+        operator_list: list[Operator],
+        min_value: int,
+        max_value: int,
+        num_operators: int,
+        rand_seed: Optional[int] = None,
+    ) -> None:
         self.operations = operator_list
         self.min_value = min_value
         self.max_value = max_value
         self.num_operators = num_operators
         self.seed = rand_seed
         self.rng = Random(rand_seed)
+        self.result: list[RallyStep] = []
 
-    def build_rally(self):
+    def build_rally(self) -> None:
         results: list[RallyStep] = []
 
         start = self.rng.randrange(self.min_value, max(self.min_value + 1, self.max_value))
@@ -71,6 +79,7 @@ class RallyAlgorithm:
                         value,
                         curr_result,
                     )
+                    assert curr_result is not None and value is not None
                     results.append(RallyStep(operator, value, curr_result))
                     break
                 else:
@@ -78,7 +87,13 @@ class RallyAlgorithm:
 
         self.result = results
 
-    def choice_criterium(self, curr_result, operator, value, results):
+    def choice_criterium(
+        self,
+        curr_result: Optional[int],
+        operator: Operator,
+        value: Optional[int],
+        results: list[RallyStep],
+    ) -> bool:
         if curr_result is None or value is None:
             return False
         if curr_result < self.min_value:

@@ -168,10 +168,10 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 | Q7 | ~~**`distribute_groups_in_drawing_area` silently drops exercises**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** Now logs a warning with count of dropped exercises when height is exceeded. |
 | Q8 | ~~**`_get_operator_string` duplicated**~~ | ~~`mathrally/template.py`, `addSubWritten/template.py`~~ | ✅ **Resolved.** Extracted to `exercises/utils.py` as `operator_to_string()`. Both templates now call the shared function. |
 | Q9 | ~~**`SVGFile.find_all_elements_by_attributes` crashes if element lacks the attribute**~~ | ~~`svg/svg_handler.py`~~ | ✅ **Resolved.** Added `if attribute in element.attrib` guard. |
-| Q10 | **`calculate_group_dimensions` only handles `translate()` transforms** | `svg/svg_groups.py` L21 | `rotate`, `scale`, `matrix` transforms are silently ignored. Not a current blocker but will break with richer SVGs. |
+| Q10 | ~~**`calculate_group_dimensions` only handles `translate()` transforms**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** Replaced regex parsing with `inkex.transforms.Transform` applying full affine transforms (`translate`, `rotate`, `scale`, `matrix`, `skew`) across nested groups and primitives. |
 | Q11 | ~~**Multiple package management systems**~~ | ~~Root~~ | ✅ **Resolved.** Consolidated solely on `uv` + `pyproject.toml`. Removed Pipfile, Pipfile.lock, requirements.txt, setup.py. |
 | Q12 | ~~**`tool>=0.8.0` in dependencies**~~ | ~~`pyproject.toml`~~ | ✅ **Resolved.** Removed unused `tool` dependency and its transitive packages. |
-| Q13 | **`__init__.py` contents** | `exercises/*/` | Should document public API. |
+| Q13 | ~~**`__init__.py` contents**~~ | ~~`exercises/*/`, `core/`, `svg/`~~ | ✅ **Resolved.** Comprehensive public API docstrings and `__all__` exports documented across all packages. |
 | Q24 | ~~**Ad-hoc operand generation for `*` and `/` in `RallyAlgorithm`**~~ | ~~`exercises/mathrally/algorithm.py`~~ | ✅ **Resolved.** Multiplication picks multipliers in `2..10`; division chooses from exact integer divisors of `curr_val`. |
 | Q25 | ~~**`NumericalPaperCell` re-parses XML string on every cell instantiation**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Builds prototype elements programmatically once with `lxml.etree` and deep-copies per cell. |
 | Q26 | ~~**`distribute_groups_in_drawing_area` redundant bbox calculations & duplicated code**~~ | ~~`svg/svg_groups.py`~~ | ✅ **Resolved.** Bboxes cached once per element; shared `_flush_row()` helper deduplicates row layout. |
@@ -182,9 +182,9 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
 
 | # | Issue | Location | Notes |
 |---|-------|----------|-------|
-| Q14 | **No type hints** | All modules | The codebase would benefit from type annotations for maintainability. |
+| Q14 | ~~**No type hints**~~ | ~~All modules~~ | ✅ **Resolved.** Type annotations added across all domain, SVG, and CLI modules; `mypy` and `lxml-stubs` added to dev dependencies, passing with 0 errors and wired into CI. |
 | Q15 | ~~**`_set_text(element, text)` uses `element[0]`**~~ | ~~`mathrally/template.py`~~ | ✅ **Resolved** (implicitly via refactoring). The old `_set_text` method was removed during the `RallyTemplate` refactor. |
-| Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms and SVG components; full suite now **67 tests**. |
+| Q16 | **Test coverage is integration-only** | `tests/` | Expanded unit tests for algorithms, transforms, and SVG components; full suite now **71 tests**. |
 | Q17 | ~~**Output SVG files checked into root**~~ | ~~Root~~ | ✅ **Resolved.** `.gitignore` ignores generated `*.svg`, `*.pdf`, and `output.png` while preserving template SVGs. |
 | Q18 | ~~**Inline SVG string template in `paper_cell.py`**~~ | ~~`svg/number_paper/paper_cell.py`~~ | ✅ **Resolved.** Replaced by clean programmatic `lxml.etree` element creation. |
 
@@ -233,10 +233,11 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
    - ✅ Renamed `math-trainer.py` → `math_trainer.py` for Python importability.
    - ✅ README fully rewritten: option tables and examples for all three commands.
    - ✅ All 67 tests passing.
-6. **Phase 5: Code Quality — Type Hints & API Documentation**
-   - Q10: Full SVG transform matrix support in `calculate_group_dimensions` (`rotate`, `scale`, `matrix`).
-   - Q13: Document public API in `exercises/*/` `__init__.py` files.
-   - Q14: Add type annotations across `exercises/`, `svg/`, `cli/` and wire up `mypy`/`pyright` in CI.
+6. ✅ **Phase 5: Code Quality — Type Hints & API Documentation**
+   - ✅ Q10: Full SVG transform matrix support in `calculate_group_dimensions` (`translate`, `rotate`, `scale`, `matrix`, `skew`).
+   - ✅ Q13: Documented public API across `exercises/`, `exercises/*/`, `core/`, and `svg/` `__init__.py` files.
+   - ✅ Q14: Added comprehensive type annotations across `core/`, `exercises/`, `svg/`, `cli/`, `math_trainer.py`. Added `mypy` & `lxml-stubs` to dev dependencies with 0 type errors, and wired `mypy` type checking into GitHub Actions CI.
+   - ✅ Suite expanded to 71 tests, all passing.
 
 ---
 

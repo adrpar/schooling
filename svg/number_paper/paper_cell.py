@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 from svg.svg_handler import NAMESPACE_MAP, SvgElement
 
 # Cell geometry constants (sourced from original Inkscape template)
@@ -14,7 +16,7 @@ _PROTO_TSPAN: SvgElement
 _PROTO_RECT: SvgElement
 
 
-def _build_prototypes():
+def _build_prototypes() -> None:
     global _PROTO_GROUP, _PROTO_TEXT, _PROTO_TSPAN, _PROTO_RECT
 
     _PROTO_GROUP = SvgElement("g", attrib={"transform": "translate(0.0,0.0)"})
@@ -78,7 +80,7 @@ class NumericalPaperCell:
     DIVISION_DETECTION = ["/", "÷"]
     OPERATORS = ["+", "-", "×", "÷"]
 
-    def __init__(self, value=None):
+    def __init__(self, value: Optional[Any] = None) -> None:
         # Deep-copy the prototype tree instead of re-parsing XML (Q25)
         self.group = _PROTO_GROUP.clone()
 
@@ -91,7 +93,7 @@ class NumericalPaperCell:
         if value in self.OPERATOR_DETECTION:
             self._handle_operators(value)
 
-    def _handle_operators(self, value):
+    def _handle_operators(self, value: Any) -> None:
         """Normalise operator glyphs. With text-anchor:middle, no x-nudging needed. (Q28)"""
         if self.text is None or self.tspan is None:
             return
@@ -101,7 +103,7 @@ class NumericalPaperCell:
             self.tspan.text = self.OPERATORS[3]  # ÷
         # +, -, and the unicode variants are already correct as-is
 
-    def _remove_text(self):
+    def _remove_text(self) -> None:
         if self.text is not None:
             self.group.remove(self.text)
             self.text = None

@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union, cast
+
 
 from svg.styles import (
     COLOR_SOLUTION,
@@ -77,7 +78,7 @@ class CanvasExerciseTemplate:
         """
         raw_root = ET.Element(
             f"{{{SVG_NS}}}svg",
-            nsmap={None: SVG_NS, "svg": SVG_NS},
+            nsmap=cast(Any, {None: SVG_NS, "svg": SVG_NS}),
             attrib={
                 "width": f"{width:.0f}mm",
                 "height": f"{height:.0f}mm",
@@ -317,10 +318,11 @@ class CanvasExerciseTemplate:
         """
         if self.drawing_area is not None and self.drawing_area_group is not None:
             distribute_groups_in_drawing_area(
-                exercise_nodes,
+                list(exercise_nodes),
                 self.drawing_area,
                 self.drawing_area_group,
             )
+
 
     def write(self, file_path: Union[str, Path]) -> None:
         """Writes current document to the specified SVG file path."""

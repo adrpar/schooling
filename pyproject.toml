@@ -16,6 +16,8 @@ math-trainer = "math_trainer:cli"
 [dependency-groups]
 dev = [
     "black>=26.5.1",
+    "lxml-stubs>=0.5.1",
+    "mypy>=2.4.1",
     "pytest>=9.1.1",
 ]
 
@@ -31,3 +33,14 @@ py-modules = ["math_trainer"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "inkex.*"
+ignore_missing_imports = true
+

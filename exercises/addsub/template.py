@@ -1,19 +1,21 @@
 from pathlib import Path
 from typing import Optional, Union
 
+from exercises.addsub.algorithm import AddSubAlgorithm
 from exercises.utils import operator_to_string
 from svg.canvas_template import CanvasExerciseTemplate
 from svg.number_paper.written_calc_exercise_box import WrittenCalcExerciseBox
 
+
 class AddSubTemplate(CanvasExerciseTemplate):
     """Template for generating AddSub written calculation exercise sheets."""
 
-    def __init__(self, template_path: Optional[Union[str, Path]] = None):
+    def __init__(self, template_path: Optional[Union[str, Path]] = None) -> None:
         super().__init__(template_path)
 
     def create_new(
         self,
-        algorithm,
+        algorithm: AddSubAlgorithm,
         filename_addsub: Union[str, Path],
         show_numbering: bool = True,
     ) -> None:
@@ -35,4 +37,3 @@ class AddSubTemplate(CanvasExerciseTemplate):
 
         self.distribute_exercises(exercise_nodes)
         self.write(filename_addsub)
-

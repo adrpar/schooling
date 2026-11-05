@@ -1,7 +1,8 @@
 import copy
 import os
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Iterator, Optional, Union, cast
+
 
 import inkex
 import lxml.etree as ET
@@ -59,7 +60,7 @@ class SvgElement:
         return t.split("}")[-1] if "}" in t else t
 
     @property
-    def attrib(self) -> dict[str, str]:
+    def attrib(self) -> Any:
         """Access underlying attributes dictionary."""
         return self._element.attrib
 
@@ -98,7 +99,7 @@ class SvgElement:
     def set(self, key: str, value: Any) -> None:
         self._element.attrib[key] = str(value)
 
-    def __getitem__(self, key: Union[str, int]) -> Union[str, "SvgElement"]:
+    def __getitem__(self, key: Union[str, int]) -> Any:
         if isinstance(key, int):
             return SvgElement(self._element[key])
         return self._element.attrib[key]
@@ -112,13 +113,14 @@ class SvgElement:
     def __len__(self) -> int:
         return len(self._element)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator["SvgElement"]:
         for child in self._element:
             yield SvgElement(child)
 
-    def iterchildren(self):
+    def iterchildren(self) -> Iterator["SvgElement"]:
         for child in self._element.iterchildren():
             yield SvgElement(child)
+
 
     def create_child(
         self,
@@ -145,7 +147,11 @@ class SvgElement:
     def find_by_id(self, element_id: str) -> Optional["SvgElement"]:
         """Finds first descendant element matching the given id attribute."""
         results = self._element.xpath(f".//*[@id='{element_id}']")
-        return SvgElement(results[0]) if results else None
+        if isinstance(results, list) and results:
+            elem = results[0]
+            if isinstance(elem, ET._Element):
+                return SvgElement(elem)
+        return None
 
     def find_all(self, tag: str) -> list["SvgElement"]:
         """Finds all descendant elements matching the given local tag name or XPath expression."""
@@ -153,17 +159,20 @@ class SvgElement:
             path = tag if tag.startswith(".") else f".//{tag}"
             return self.findall(path)
         results = self._element.xpath(f".//*[local-name()='{tag}']")
-        return [SvgElement(e) for e in results]
+        if isinstance(results, list):
+            return [SvgElement(e) for e in results if isinstance(e, ET._Element)]
+        return []
 
     def findall(self, path: str, namespaces: Optional[dict] = None) -> list["SvgElement"]:
         """Finds all elements matching the XPath pattern."""
         if namespaces is not None:
             return [SvgElement(e) for e in self._element.findall(path, namespaces=namespaces)]
         # Try with default namespace map first
-        res = self._element.findall(path, namespaces=self.NAMESPACE_MAP)
+        res = self._element.findall(path, namespaces=cast(Any, self.NAMESPACE_MAP))
         if not res:
             res = self._element.findall(path)
         return [SvgElement(e) for e in res]
+
 
     def find(self, path: str, namespaces: Optional[dict] = None) -> Optional["SvgElement"]:
         """Finds first element matching the XPath pattern."""
@@ -297,31 +306,37 @@ class SVGFile:
 
     NAMESPACE_MAP = NAMESPACE_MAP
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: Union[str, Path]) -> None:
         self.file_name = file_name
         self.doc = SvgDocument.from_file(file_name)
         self.svg_xml = self.doc._tree
         self.svg = self.doc.root
 
-    def find_all(self, tag):
+    def find_all(self, tag: str) -> list[SvgElement]:
         return self.doc.find_all(tag)
 
-    def find_all_elements_by_attributes(self, tag, attribute):
+    def find_all_elements_by_attributes(
+        self, tag: str, attribute: str
+    ) -> dict[str, SvgElement]:
         return self.doc.find_all_with_attr(tag, attribute)
 
-    def find_all_in_node(self, node, tag):
+    def find_all_in_node(self, node: Any, tag: str) -> list[SvgElement]:
         elem = node if isinstance(node, SvgElement) else SvgElement(node)
         return elem.find_all(tag)
 
-    def find_all_elements_by_attributes_in_node(self, node, tag, attribute):
+    def find_all_elements_by_attributes_in_node(
+        self, node: Any, tag: str, attribute: str
+    ) -> dict[str, SvgElement]:
         elem = node if isinstance(node, SvgElement) else SvgElement(node)
         return elem.find_all_with_attr(tag, attribute)
 
-    def all_spans_in_text(self, text_node):
-        elem = text_node if isinstance(text_node, SvgElement) else SvgElement(text_node)
+    def all_spans_in_text(self, text_node: Any) -> list[SvgElement]:
+        elem = (
+            text_node if isinstance(text_node, SvgElement) else SvgElement(text_node)
+        )
         return elem.find_all("tspan")
 
-    def write(self, file_name):
+    def write(self, file_name: Union[str, Path]) -> None:
         self.doc.write(file_name)
 
 
@@ -330,18 +345,21 @@ class SvgNode:
 
     NAMESPACE_MAP = NAMESPACE_MAP
 
-    def __init__(self, node):
+    def __init__(self, node: Any) -> None:
         self._elem = node if isinstance(node, SvgElement) else SvgElement(node)
         self.node = self._elem.raw_element
 
-    def find_all_in_node(self, tag):
+    def find_all_in_node(self, tag: str) -> list[SvgElement]:
         return self._elem.find_all(tag)
 
-    def find_all_elements_by_attributes_in_node(self, tag, attribute):
+    def find_all_elements_by_attributes_in_node(
+        self, tag: str, attribute: str
+    ) -> dict[str, SvgElement]:
         return self._elem.find_all_with_attr(tag, attribute)
 
 
-def _ensure_inkscape():
+
+def _ensure_inkscape() -> None:
     """Ensure Inkscape executable is discoverable by inkex."""
     if not inkex.command.is_inkscape_available():
         candidate_dirs = [
@@ -357,7 +375,9 @@ def _ensure_inkscape():
                 break
 
 
-def render_svg_to_pdf(svg_path, pdf_path):
+def render_svg_to_pdf(
+    svg_path: Union[str, Path], pdf_path: Union[str, Path]
+) -> None:
     """
     Converts an SVG file to a PDF using Inkex.
 
@@ -372,3 +392,4 @@ def render_svg_to_pdf(svg_path, pdf_path):
         inkex.command.inkscape(str(svg_path), "--export-filename", str(pdf_path))
     except Exception as e:
         raise RuntimeError(f"Failed to convert {svg_path} to PDF: {e}")
+
