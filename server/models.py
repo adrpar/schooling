@@ -26,6 +26,8 @@ class ExerciseBlockSpec(BaseModel):
     type: ExerciseType
     x: float = Field(description="X coordinate on A4 canvas in mm", default=20.0)
     y: float = Field(description="Y coordinate on A4 canvas in mm", default=40.0)
+    width: Optional[float] = Field(description="Width in mm", default=None)
+    height: Optional[float] = Field(description="Height in mm", default=None)
     scale: float = Field(description="Scale multiplier", default=1.0)
     params: dict[str, Any] = Field(default_factory=dict)
 

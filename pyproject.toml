@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.8",
+    "connexion[uvicorn,swagger-ui]>=3.0",
     "fastapi>=0.162.0",
     "inkex>=1.4.1",
     "lxml>=5.3.0",
@@ -44,6 +45,6 @@ warn_unused_configs = true
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = "inkex.*"
+module = ["inkex.*", "connexion"]
 ignore_missing_imports = true
 

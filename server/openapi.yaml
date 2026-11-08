@@ -1,0 +1,396 @@
+openapi: 3.0.3
+info:
+  title: Math Trainer Sheet Editor API
+  version: 0.1.0
+  description: API-first contract for the Multi-Exercise Sheet Editor using Connexion.
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      operationId: server.api.health_check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/catalog:
+    get:
+      summary: Get available exercise types and parameters
+      operationId: server.api.get_catalog
+      responses:
+        '200':
+          description: List of exercise catalog items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogExerciseItem'
+
+  /api/blocks/preview:
+    post:
+      summary: Generate SVG preview and bounding box for a single exercise block
+      operationId: server.api.preview_block
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockPreviewRequest'
+      responses:
+        '200':
+          description: Rendered block preview SVG and dimensions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockPreviewResponse'
+        '400':
+          description: Invalid block configuration
+
+  /api/sheet/render:
+    post:
+      summary: Render complete A4 worksheet SVG from sheet specification
+      operationId: server.api.render_sheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetSpec'
+      responses:
+        '200':
+          description: Composed A4 SVG document
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        '400':
+          description: Render failure
+
+  /api/sheet/pdf:
+    post:
+      summary: Compile worksheet to PDF via Inkscape and download
+      operationId: server.api.export_pdf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetSpec'
+      responses:
+        '200':
+          description: Rendered PDF document
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '500':
+          description: PDF export error
+
+  /api/sheets:
+    get:
+      summary: List all saved sheets
+      operationId: server.api.list_saved_sheets
+      responses:
+        '200':
+          description: List of saved sheet summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SheetSummary'
+    post:
+      summary: Save a new sheet specification to SQLite
+      operationId: server.api.save_new_sheet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetSpec'
+      responses:
+        '200':
+          description: Saved sheet specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetSpec'
+
+  /api/sheets/{sheet_id}:
+    get:
+      summary: Load a saved sheet by ID
+      operationId: server.api.get_sheet_by_id
+      parameters:
+        - name: sheet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sheet specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetSpec'
+        '404':
+          description: Sheet not found
+    put:
+      summary: Update an existing saved sheet
+      operationId: server.api.update_saved_sheet
+      parameters:
+        - name: sheet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SheetSpec'
+      responses:
+        '200':
+          description: Updated sheet specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetSpec'
+    delete:
+      summary: Delete a saved sheet
+      operationId: server.api.delete_sheet_by_id
+      parameters:
+        - name: sheet_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sheet deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+        '404':
+          description: Sheet not found
+
+components:
+  schemas:
+    ExerciseType:
+      type: string
+      enum: [addsub, zahlenmauer, mathrally, custom_svg]
+
+    HeaderSpec:
+      type: object
+      properties:
+        title:
+          type: string
+          default: "Mathe-Übungsblatt"
+        subtitle:
+          type: string
+          default: ""
+        show_name_field:
+          type: boolean
+          default: true
+        show_date_field:
+          type: boolean
+          default: true
+
+    ExerciseBlockSpec:
+      type: object
+      required:
+        - type
+        - x
+        - y
+      properties:
+        id:
+          type: string
+        type:
+          $ref: '#/components/schemas/ExerciseType'
+        x:
+          type: number
+          format: float
+          description: X position on A4 canvas in millimeters
+        y:
+          type: number
+          format: float
+          description: Y position on A4 canvas in millimeters
+        width:
+          type: number
+          format: float
+          nullable: true
+          description: Width on A4 canvas in millimeters
+        height:
+          type: number
+          format: float
+          nullable: true
+          description: Height on A4 canvas in millimeters
+        scale:
+          type: number
+          format: float
+          default: 1.0
+        params:
+          type: object
+          additionalProperties: true
+
+    SheetSpec:
+      type: object
+      required:
+        - title
+        - blocks
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          default: "Mathe-Übungsblatt"
+        template:
+          type: string
+          nullable: true
+          description: Optional background template filename or ID
+        header:
+          $ref: '#/components/schemas/HeaderSpec'
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseBlockSpec'
+        show_solutions:
+          type: boolean
+          default: false
+        seed:
+          type: integer
+          nullable: true
+
+    SheetSummary:
+      type: object
+      required:
+        - id
+        - title
+        - block_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        block_count:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    BlockPreviewRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/ExerciseType'
+        params:
+          type: object
+          additionalProperties: true
+        show_solution:
+          type: boolean
+          default: false
+        seed:
+          type: integer
+          nullable: true
+
+    BlockPreviewResponse:
+      type: object
+      required:
+        - type
+        - svg
+        - width
+        - height
+      properties:
+        type:
+          $ref: '#/components/schemas/ExerciseType'
+        svg:
+          type: string
+        width:
+          type: number
+          format: float
+        height:
+          type: number
+          format: float
+
+    CatalogExerciseParam:
+      type: object
+      required:
+        - name
+        - label
+        - type
+        - default
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+        default: {}
+        options:
+          type: array
+          items:
+            type: string
+        min:
+          type: integer
+          nullable: true
+        max:
+          type: integer
+          nullable: true
+        help:
+          type: string
+          nullable: true
+
+    CatalogExerciseItem:
+      type: object
+      required:
+        - type
+        - name
+        - description
+        - category
+        - default_params
+        - params
+        - default_width
+        - default_height
+      properties:
+        type:
+          $ref: '#/components/schemas/ExerciseType'
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        default_params:
+          type: object
+          additionalProperties: true
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogExerciseParam'
+        default_width:
+          type: number
+          format: float
+        default_height:
+          type: number
+          format: float
+

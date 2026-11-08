@@ -224,3 +224,4 @@ Different exercises require distinct controls:
    - `A4Canvas.test.tsx`: Tests block rendering and selection on click.
 3. **API Integration Tests**:
    - Mock backend requests using `msw` (Mock Service Worker) to ensure the UI behaves properly when offline or on error.
+
