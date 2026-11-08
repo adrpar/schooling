@@ -238,6 +238,13 @@ These are tracked here and will be addressed as we go. Each flag gets a status.
    - ✅ Q13: Documented public API across `exercises/`, `exercises/*/`, `core/`, and `svg/` `__init__.py` files.
    - ✅ Q14: Added comprehensive type annotations across `core/`, `exercises/`, `svg/`, `cli/`, `math_trainer.py`. Added `mypy` & `lxml-stubs` to dev dependencies with 0 type errors, and wired `mypy` type checking into GitHub Actions CI.
    - ✅ Suite expanded to 71 tests, all passing.
+7. **Phase 6: Multi-Exercise Sheet Editor (MVP)** *(in progress)*
+   - ✅ Backend: FastAPI app in `server/app.py` with multi-block A4 composer (`server/composer.py`).
+   - ✅ Persistence: SQLite database (`server/db.py`) storing sheet specifications with full CRUD endpoints.
+   - ✅ Endpoints: `/api/catalog`, `/api/blocks/preview`, `/api/sheet/render`, `/api/sheet/pdf`, `/api/sheets`.
+   - ✅ Testing: 78 tests passing (including 7 backend integration tests).
+   - ✅ Guidelines: Comprehensive frontend architecture and maintainability guidelines in `docs/frontend_architecture_guidelines.md`.
+   - 🔄 Next: Frontend implementation in `web/` using React, Vite, TypeScript, and the modular Exercise Plugin architecture.
 
 ---
 

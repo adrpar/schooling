@@ -196,6 +196,10 @@ class SvgElement:
         """Returns an independent deep copy of this element and its subtree."""
         return SvgElement(copy.deepcopy(self._element))
 
+    def to_string(self, pretty_print: bool = True) -> str:
+        """Serializes this element and its subtree to an XML/SVG string."""
+        return ET.tostring(self._element, encoding="utf-8", pretty_print=pretty_print).decode("utf-8")
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self._element, name)
 

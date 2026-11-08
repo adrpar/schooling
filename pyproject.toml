@@ -6,8 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.8",
+    "fastapi>=0.162.0",
     "inkex>=1.4.1",
     "lxml>=5.3.0",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
@@ -16,6 +18,7 @@ math-trainer = "math_trainer:cli"
 [dependency-groups]
 dev = [
     "black>=26.5.1",
+    "httpx>=0.28.1",
     "lxml-stubs>=0.5.1",
     "mypy>=2.4.1",
     "pytest>=9.1.1",
@@ -26,7 +29,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["core*", "exercises*", "svg*", "cli*"]
+include = ["core*", "exercises*", "svg*", "cli*", "server*"]
 
 [tool.setuptools]
 py-modules = ["math_trainer"]
