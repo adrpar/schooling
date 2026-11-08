@@ -12,6 +12,7 @@ class ExerciseType(str, Enum):
     ADDSUB = "addsub"
     ZAHLENMAUER = "zahlenmauer"
     MATHRALLY = "mathrally"
+    CUSTOM_SVG = "custom_svg"
 
 
 class HeaderSpec(BaseModel):

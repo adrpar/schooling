@@ -52,3 +52,4 @@ export function getPluginsByCategory(): Record<string, ExercisePlugin[]> {
   }
   return groups;
 }
+

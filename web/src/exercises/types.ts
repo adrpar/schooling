@@ -40,3 +40,4 @@ export interface ExercisePlugin {
    */
   CustomInspector?: React.FC<ExerciseInspectorProps>;
 }
+

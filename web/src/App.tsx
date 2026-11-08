@@ -110,6 +110,7 @@ export const App: React.FC = () => {
           onSelectBlock={selectBlock}
           onMoveBlock={moveBlock}
           onCommitMove={commitMove}
+          onUpdateBlockDimensions={(id, width, height) => updateBlock(id, { width, height })}
         />
 
         {/* Right: Property Inspector */}

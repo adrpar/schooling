@@ -73,3 +73,4 @@ export const CustomSvgInspector: React.FC<ExerciseInspectorProps> = ({
     </div>
   );
 };
+

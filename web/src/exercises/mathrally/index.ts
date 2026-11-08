@@ -21,3 +21,4 @@ export const mathRallyPlugin: ExercisePlugin = {
     template: 'Rally1.svg',
   },
 };
+

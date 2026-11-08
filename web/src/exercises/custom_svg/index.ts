@@ -21,3 +21,4 @@ export const customSvgPlugin: ExercisePlugin = {
   },
   CustomInspector: CustomSvgInspector,
 };
+

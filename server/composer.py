@@ -4,7 +4,7 @@ server/composer.py — Multi-exercise A4 sheet composer and block generator.
 
 from pathlib import Path
 from random import Random
-from typing import Optional, Union
+from typing import Optional, Union, cast
 import lxml.etree as ET
 
 from core.operators import Operator
@@ -131,6 +131,16 @@ def generate_block_element(
         elem = SvgElement("g", attrib={"id": f"rally_block_{exercise_index}"})
         for child in layer.iterchildren():
             elem.append(child.clone())
+
+    elif block.type == ExerciseType.CUSTOM_SVG:
+        raw_svg = str(params.get("svg_content", "<rect width='40' height='40' fill='#cbd5e1'/>"))
+        elem = SvgElement("g", attrib={"id": f"custom_svg_{exercise_index}"})
+        try:
+            parsed = ET.fromstring(f"<g xmlns='http://www.w3.org/2000/svg'>{raw_svg}</g>")
+            for raw_node in list(parsed):
+                elem.append(cast(ET._Element, raw_node))
+        except Exception:
+            elem.append(cast(ET._Element, ET.fromstring("<rect width='40' height='40' fill='#f87171' opacity='0.5'/>")))  # noqa: E501
 
     else:
         raise ValueError(f"Unknown exercise type: {block.type}")

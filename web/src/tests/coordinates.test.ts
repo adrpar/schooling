@@ -42,3 +42,4 @@ describe('Coordinates & Snapping', () => {
     expect(offBottomRight.y).toBe(PAGE_HEIGHT_MM - height - margin);
   });
 });
+

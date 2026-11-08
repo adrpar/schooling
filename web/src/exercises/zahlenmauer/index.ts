@@ -22,3 +22,4 @@ export const zahlenmauerPlugin: ExercisePlugin = {
     show_numbering: true,
   },
 };
+

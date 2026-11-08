@@ -62,3 +62,4 @@ export function clampBlockPosition(
     y: clamp(y, minY, maxY),
   };
 }
+
